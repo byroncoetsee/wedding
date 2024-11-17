@@ -5,7 +5,7 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 var container = { width: window.innerWidth, height: window.innerHeight };
-const landScale = 3.5;
+const landScale = 1;
 
 // Rotate arms / legs
 const degreesToRadians = (degrees) => {
@@ -119,6 +119,7 @@ class Scene {
     this.renderer;
     this.autoRotationEnabled = true;
   }
+
   initLegend() {
     // Create legend container
     const legend = document.createElement("div");
@@ -144,6 +145,7 @@ class Scene {
 
     document.body.appendChild(legend);
   }
+
   initStats() {
     // STATS
     this.stats = new Stats();
@@ -154,6 +156,7 @@ class Scene {
     this.stats.domElement.style.top = "0px";
     // document.body.appendChild(this.stats.domElement);
   }
+
   initScene() {
     this.scene = new THREE.Scene();
     const topColor = new THREE.Color("#6dd5fa");
@@ -175,6 +178,7 @@ class Scene {
     this.scene.background = gradientTexture;
     this.scene.fog = new THREE.FogExp2("#6dd5fa", 0.007);
   }
+
   initCamera() {
     this.camera = new THREE.PerspectiveCamera(
       this.params.fieldOfView,
@@ -187,6 +191,7 @@ class Scene {
     this.camera.position.set(-40, 8.5, 40);
     this.camera.lookAt(this.scene.position);
   }
+
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = false;
@@ -204,6 +209,7 @@ class Scene {
       }
     });
   }
+
   initRenderer() {
     let pixelRatio = window.devicePixelRatio;
     let AA = true;
@@ -226,6 +232,7 @@ class Scene {
     this.renderer.shadowMap.soft = true;
     document.body.appendChild(canvas);
   }
+
   initLights() {
     this.directionalLight = new THREE.DirectionalLight("#ffb157", 2.5);
     this.light = new THREE.HemisphereLight("#ffffff", "#b3858c", 1.2);
@@ -250,6 +257,7 @@ class Scene {
     this.directionalLight.shadow.camera.top = 30;
     this.directionalLight.shadow.camera.bottom = -30;
   }
+
   render() {
     this.stats.begin();
     this.controls.update();
@@ -257,6 +265,7 @@ class Scene {
     this.renderer.render(this.scene, this.camera);
     this.stats.end();
   }
+
   init() {
     this.initStats();
     this.initLegend();
@@ -265,8 +274,9 @@ class Scene {
     this.initRenderer();
     this.initControls();
     this.initLights();
-    // this.initClickHandler();
+    this.initClickHandler();
   }
+
   initClickHandler() {
     this.cameraController = new CameraController(this.camera, this.controls);
 
@@ -396,7 +406,8 @@ class Island {
       z: 0,
       herbs: 2,
       fadeStartDistance: 100,
-      fadeEndDistance: 300,
+      fadeEndDistance: 700,
+      items: [], // Add this to store related items
       ...params,
     };
 
@@ -426,10 +437,11 @@ class Island {
     this.greenMaterial = new THREE.MeshPhongMaterial({
       color: 0x379351,
       shininess: 80,
-      bumpMap: noiseMap(256, 20, 10),
-      bumpScale: 50.15,
+      bumpMap: noiseMap(768, 60, 30),
+      bumpScale: 150.45,
       flatShading: true,
     });
+
     this.plainGreenMaterial = new THREE.MeshPhongMaterial({
       color: 0x379351,
       flatShading: true,
@@ -439,6 +451,7 @@ class Island {
       color: 0x664e31,
       flatShading: true,
     });
+
     this.stoneMaterial = new THREE.MeshPhongMaterial({
       color: 0x9eaeac,
       shadowSide: THREE.FrontSide,
@@ -446,13 +459,6 @@ class Island {
 
     // Add the instance reference to the group
     this.island.__islandInstance = this;
-
-    // Make all materials transparent
-    this.cloudMaterial.transparent = true;
-    this.greenMaterial.transparent = true;
-    this.plainGreenMaterial.transparent = true;
-    this.earthMaterial.transparent = true;
-    this.stoneMaterial.transparent = true;
 
     // Add update method to animation loop
     const animate = () => {
@@ -462,10 +468,16 @@ class Island {
     animate();
   }
 
+  addItem(item) {
+    item.parent?.remove(item);
+    this.island.add(item);
+    this.params.items.push(item);
+  }
+
   updateScale() {
     const distance = this.camera.position.distanceTo(this.island.position);
-    const fadeStart = 100; // Distance where fade begins
-    const fadeEnd = 600; // Distance where object disappears
+    const fadeStart = 300;
+    const fadeEnd = 600;
     const scale = 1 - (distance - fadeStart) / (fadeEnd - fadeStart);
     this.island.scale.setScalar(Math.max(0, Math.min(1, scale)) * landScale);
   }
@@ -473,27 +485,26 @@ class Island {
   createGroundParticle() {
     const particles = new THREE.Group();
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 60; i++) {
       const geoGroundParticule = new THREE.TetrahedronGeometry(
-        randomize(1.2, 2.8), // Smaller size range
+        randomize(1, 2.7), // Smaller size range
         randomize(2, 3)
       );
       jitter(geoGroundParticule, 0.0);
 
       const particule = new THREE.Mesh(geoGroundParticule, this.earthMaterial);
 
-      // Randomize scale (smaller)
       particule.scale.set(
-        randomize(0.1, 0.2, true),
-        randomize(0.1, 0.2, true),
-        randomize(0.1, 0.2, true)
+        randomize(0.3, 0.6, true),
+        randomize(0.3, 0.6, true),
+        randomize(0.3, 0.6, true)
       );
 
       // Spread particles around more
       particule.position.set(
-        randomize(randomize(-20, -5, true), randomize(5, 20, true), true),
-        randomize(-25, 2, true),
-        randomize(randomize(-20, -5, true), randomize(5, 20, true), true)
+        randomize(randomize(-40, -15, true), randomize(15, 40, true), true),
+        randomize(-75, 6, true),
+        randomize(randomize(-40, -15, true), randomize(15, 40, true), true)
       );
 
       particles.add(particule);
@@ -502,22 +513,26 @@ class Island {
     return particles;
   }
 
+  createGrassGeometry() {
+    const geoGreen = new THREE.CylinderGeometry(22.2, 16.5, 9.0, 36, 3);
+    jitter(geoGreen, 0.6);
+    geoGreen.translate(0, 9.9, 0);
+    geoGreen.scale(1.05, 1, 1.05);
+    return geoGreen;
+  }
+
   drawGround() {
     this.ground = new THREE.Group();
 
     // Create earth base
-    const geoGround = new THREE.CylinderGeometry(7, 2, 9, 12, 5);
-    jitter(geoGround, 0.6);
-    geoGround.translate(0, -0.5, 0);
+    const geoGround = new THREE.CylinderGeometry(21, 6, 27, 12, 5);
+    jitter(geoGround, 1.8);
+    geoGround.translate(0, -1.5, 0);
     const earth = new THREE.Mesh(geoGround, this.earthMaterial);
 
     // Create grass top
-    const geoGreen = new THREE.CylinderGeometry(7.4, 5.5, 3.0, 36, 3);
-    jitter(geoGreen, 0.2);
-    geoGreen.translate(0, 3.3, 0);
-
+    const geoGreen = this.createGrassGeometry();
     const green = new THREE.Mesh(geoGreen, this.plainGreenMaterial);
-    geoGreen.scale(1.05, 1, 1.05);
 
     // Add ground particle
     const particule = this.createGroundParticle();
@@ -526,7 +541,7 @@ class Island {
     // Combine meshes
     this.ground.add(earth);
     this.ground.add(green);
-    this.ground.position.y = -5.6;
+    this.ground.position.y = -16.8;
     shadowSupport(this.ground);
     this.island.add(this.ground);
   }
@@ -534,18 +549,18 @@ class Island {
   drawCloud() {
     this.clouds = new THREE.Group();
 
-    const geoCloud = new THREE.SphereGeometry(2, 6, 6);
-    jitter(geoCloud, 0.2);
+    const geoCloud = new THREE.SphereGeometry(6, 6, 6);
+    jitter(geoCloud, 0.6);
     const cloud = new THREE.Mesh(geoCloud, this.cloudMaterial);
     cloud.scale.set(1, 0.8, 1);
 
     const cloud2 = cloud.clone();
     cloud2.scale.set(0.75, 0.5, 1);
-    cloud2.position.set(1.95, -0.5, 0);
+    cloud2.position.set(5.85, -1.5, 0);
 
     const cloud3 = cloud.clone();
     cloud3.scale.set(0.75, 0.5, 1);
-    cloud3.position.set(-1.85, -1, 0);
+    cloud3.position.set(-5.55, -3, 0);
 
     this.clouds.add(cloud);
     this.clouds.add(cloud2);
@@ -553,23 +568,23 @@ class Island {
 
     // shadowSupport(this.clouds);
 
-    this.clouds.position.x = -5;
-    this.clouds.position.y = 8;
-    this.clouds.position.z = -4.6;
+    this.clouds.position.x = -15;
+    this.clouds.position.y = 24;
+    this.clouds.position.z = -13.8;
 
     this.island.add(this.clouds);
 
     const cloneCloudGroup = this.clouds.clone();
     cloneCloudGroup.scale.set(1, 1.2, 1.2);
-    cloneCloudGroup.position.x = 6;
-    cloneCloudGroup.position.y = 9;
-    cloneCloudGroup.position.z = 4;
+    cloneCloudGroup.position.x = 18;
+    cloneCloudGroup.position.y = 27;
+    cloneCloudGroup.position.z = 12;
 
     const cloneCloudGroup2 = this.clouds.clone();
     cloneCloudGroup2.scale.set(1, 0.7, 0.7);
-    cloneCloudGroup2.position.x = randomize(-5, 9, true);
-    cloneCloudGroup2.position.y = 5;
-    cloneCloudGroup2.position.z = randomize(-9, 9, true);
+    cloneCloudGroup2.position.x = randomize(-15, 27, true);
+    cloneCloudGroup2.position.y = 15;
+    cloneCloudGroup2.position.z = randomize(-27, 27, true);
 
     this.island.add(cloneCloudGroup);
     this.island.add(cloneCloudGroup2);
@@ -577,30 +592,31 @@ class Island {
 
   drawRocks() {
     this.rocks = new THREE.Group();
-    const geoRocks = new THREE.DodecahedronGeometry(1, 0);
+    const geoRocks = new THREE.DodecahedronGeometry(3, 0);
 
     const rock = new THREE.Mesh(geoRocks, this.stoneMaterial);
     rock.scale.set(randomize(0.8, 1.2, true), randomize(0.9, 2.8, true), 1);
 
     const rock2 = rock.clone();
     rock2.scale.set(randomize(0.8, 1.2, true), randomize(1, 3, true), 1);
-    rock2.position.set(1.2, 0, -1.3);
+    rock2.position.set(5, 0, -5);
+    rock2.rotation.set(0, randomize(-0.7, 0.7, true), 0);
 
     this.rocks.add(rock);
     this.rocks.add(rock2);
-    this.rocks.position.x = -5;
-    this.rocks.position.y = 0;
-    this.rocks.position.z = -2.5;
+    this.rocks.position.x = -15;
+    this.rocks.position.y = -1;
+    this.rocks.position.z = -7.5;
 
     this.island.add(this.rocks);
   }
 
-  drawHerbs(position = { x: 1.1, y: 0, z: 0 }) {
-    const width = 0.2;
+  drawHerbs(position = { x: 3.3, y: 0, z: 0 }) {
+    const width = 0.6;
     this.herbs = new THREE.Group();
-    const geoHerbs = new THREE.ConeGeometry(width, 1, 6);
+    const geoHerbs = new THREE.ConeGeometry(width, 3, 6);
     const herb = new THREE.Mesh(geoHerbs, this.greenMaterial);
-    herb.position.set(0, -0.4, 0);
+    herb.position.set(0, -1.2, 0);
     herb.rotation.set(0, randomize(-0.7, 0.7, true), 0);
     this.herbs.add(herb);
 
@@ -609,9 +625,9 @@ class Island {
     for (i = 0; i < 4; i++) {
       const herbX = herb.clone();
       herbX.position.set(
-        randomize(-0.5, 0.5, true),
-        -0.4,
-        randomize(-0.5, 0.5, true)
+        randomize(-1.5, 1.5, true),
+        -1.2,
+        randomize(-1.5, 1.5, true)
       );
       herbX.rotation.set(
         randomize(-0.2, 0.2, true),
@@ -637,13 +653,39 @@ class Island {
     let i;
     for (i = 0; i < this.params.herbs; i++) {
       this.drawHerbs({
-        x: randomize(-5, 5, true),
+        x: randomize(-15, 15, true),
         y: 0,
-        z: randomize(-5, 5, true),
+        z: randomize(-15, 15, true),
       });
     }
 
     shadowSupport(this.island);
+  }
+}
+
+class GroundSurface {
+  constructor(scenesss, params = {}) {
+    this.params = params;
+    // this.scene = scene;
+  }
+
+  createGroundGeometry() {
+    const geometry = new THREE.CylinderGeometry(10, 8, 4, 8);
+    jitter(geometry, 0.8);
+    return geometry;
+  }
+
+  init() {
+    this.ground = new THREE.Mesh(
+      this.createGroundGeometry(),
+      new THREE.MeshPhongMaterial({
+        color: 0x664e31,
+        flatShading: true,
+      })
+    );
+    this.ground.position.y = -16.8;
+    shadowSupport(this.ground);
+    return this.ground;
   }
 }
 
@@ -989,95 +1031,112 @@ class SignPost {
   }
 }
 
-/**
- * GENERATOR
- * ------------------------------------------------------------------------
- */
 // Scene
 const scene = new Scene();
 scene.init();
 scene.render();
 
-// Island
-const island = new Island(scene.scene, scene.camera, {
-  x: 0,
-  y: 0,
-  z: 0,
-  herbs: 10,
-});
-island.init();
+const buildIsland_1 = () => {
+  // Island
+  const island = new Island(scene.scene, scene.camera, {
+    x: 0,
+    y: 0,
+    z: 0,
+    herbs: 10,
+  });
+  island.init();
 
-// Byron
-const bblock = new Bblock(scene.scene, {
-  x: 0,
-  y: -2,
-  z: 0,
-  hairColor: 0xed4928,
-  bun: false,
-});
-bblock.init();
+  // Ground
+  // const ground = new GroundSurface(scene.scene, {
+  //   x: 0,
+  //   y: 0,
+  //   z: 0,
+  // });
+  // ground.init();
+  // island.addItem(ground.ground);
 
-// Jen
-const bblockJen = new Bblock(scene.scene, {
-  x: 5,
-  y: -2,
-  z: 0,
-  hairColor: 0x5e3014,
-  bun: true,
-  hairDown: true,
-});
-bblockJen.init();
+  // Byron
+  const bblock = new Bblock(scene.scene, {
+    x: 0,
+    y: -2,
+    z: 0,
+    hairColor: 0xed4928,
+    bun: false,
+  });
+  bblock.init();
+  island.addItem(bblock.bblock);
 
-// Welcome Signpost
-const signpost = new SignPost(scene.scene, {
-  x: 0,
-  y: -3,
-  z: 15,
-  rotation: 0,
-  text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\nSave the date",
-});
-signpost.init();
+  // Jen
+  const bblockJen = new Bblock(scene.scene, {
+    x: 5,
+    y: -2,
+    z: 0,
+    hairColor: 0x5e3014,
+    bun: true,
+    hairDown: true,
+  });
+  bblockJen.init();
+  island.addItem(bblockJen.bblock);
 
-// More Details Signpost
-const signpost2 = new SignPost(scene.scene, {
-  x: 15,
-  y: -2,
-  z: 0,
-  rotation: 1,
-  text: "\n\nMore details\ncoming soon!",
-});
-signpost2.init();
+  // Welcome Signpost
+  const signpost = new SignPost(scene.scene, {
+    x: 0,
+    y: -3,
+    z: 15,
+    rotation: 0,
+    text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\nSave the date",
+  });
+  signpost.init();
+  island.addItem(signpost.signpost);
 
-// Expansion Signpost
-const signpost3 = new SignPost(scene.scene, {
-  x: 4,
-  y: -3,
-  z: -15,
-  rotation: 3,
-  text: "...either by email\nor here depending \non how many more\nhours i want to\nspend on this :)",
-});
-signpost3.init();
+  // More Details Signpost
+  const signpost2 = new SignPost(scene.scene, {
+    x: 15,
+    y: -2,
+    z: 0,
+    rotation: 1,
+    text: "\n\nMore details\ncoming soon!",
+  });
+  signpost2.init();
+  island.addItem(signpost2.signpost);
 
-// ========================================================
-// Other Islands
+  // Expansion Signpost
+  const signpost3 = new SignPost(scene.scene, {
+    x: 4,
+    y: -3,
+    z: -15,
+    rotation: 3,
+    text: "...either by email\nor here depending \non how many more\nhours i want to\nspend on this :)",
+  });
+  signpost3.init();
+  island.addItem(signpost3.signpost);
+};
 
 // Island 2
-const island2 = new Island(scene.scene, scene.camera, {
-  x: 25,
-  y: -40,
-  z: -200,
-  herbs: 10,
-});
-island2.init();
+const buildIsland_2 = () => {
+  const island2 = new Island(scene.scene, scene.camera, {
+    x: 25,
+    y: -40,
+    z: -200,
+    herbs: 10,
+  });
+  island2.init();
+};
 
 // Island 3
-const island3 = new Island(scene.scene, scene.camera, {
-  x: -70,
-  y: 50,
-  z: -500,
-  herbs: 10,
-});
-island3.init();
+const buildIsland_3 = () => {
+  const island3 = new Island(scene.scene, scene.camera, {
+    x: -70,
+    y: 50,
+    z: -500,
+    herbs: 10,
+  });
+  island3.init();
+};
+
+buildIsland_1();
+buildIsland_2();
+buildIsland_3();
 
 // Resize
 window.addEventListener("resize", () => {
