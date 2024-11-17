@@ -11,15 +11,17 @@ const landScale = 3.5;
 const degreesToRadians = (degrees) => {
   return degrees * (Math.PI / 180);
 };
+
 // Add shadow support to object
 const shadowSupport = (group) => {
   group.traverse((object) => {
-    if (object instanceof THREE.Mesh) {
+    if (object instanceof THREE.Mesh || object instanceof THREE.Group) {
       object.castShadow = true;
       object.receiveShadow = true;
     }
   });
 };
+
 // Get random number
 const randomize = (min, max, float = false) => {
   const val = Math.random() * (max - min) + min;
@@ -28,11 +30,7 @@ const randomize = (min, max, float = false) => {
   }
   return Math.floor(val);
 };
-// Box Helper
-const boxHelperSupport = (group) => {
-  const box = new THREE.BoxHelper(group, 0xffff00);
-  scene.add(box);
-};
+
 // Random MORE VERTICES
 const map = (val, smin, smax, emin, emax) =>
   ((emax - emin) * (val - smin)) / (smax - smin) + emin;
@@ -76,29 +74,32 @@ const jitter = (geo, per) => {
   pos.needsUpdate = true;
   return geo;
 };
-// Cut Object helpers
-const chopBottom = (geo, bottom) => {
-  const pos = geo.getAttribute("position");
-  const arr = pos.array;
 
-  for (let i = 1; i < arr.length; i += 3) {
-    arr[i] = Math.max(arr[i], bottom);
+function noiseMap(size = 256, intensity = 20, repeat = 30) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  let imageData = ctx.createImageData(size, size);
+  let data = imageData.data;
+
+  for (let i = 0; i < size * size; i++) {
+    let noise = Math.random() * intensity;
+    let idx = i * 4;
+    data[idx] = noise; // R
+    data[idx + 1] = noise; // G
+    data[idx + 2] = noise; // B
+    data[idx + 3] = 255; // A
   }
 
-  pos.needsUpdate = true;
-  return geo;
-};
-const chopTop = (geo, top) => {
-  const pos = geo.getAttribute("position");
-  const arr = pos.array;
+  ctx.putImageData(imageData, 0, 0);
 
-  for (let i = 1; i < arr.length; i += 3) {
-    arr[i] = Math.min(arr[i], top);
-  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(repeat, repeat);
 
-  pos.needsUpdate = true;
-  return geo;
-};
+  return texture;
+}
 
 class Scene {
   constructor(params) {
@@ -116,6 +117,32 @@ class Scene {
     this.scene;
     this.controls;
     this.renderer;
+    this.autoRotationEnabled = true;
+  }
+  initLegend() {
+    // Create legend container
+    const legend = document.createElement("div");
+    legend.style.position = "absolute";
+    legend.style.top = "10px";
+    legend.style.left = "10px";
+    legend.style.padding = "15px";
+    legend.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+    legend.style.color = "rgba(255, 255, 255, 0.7)";
+    legend.style.borderRadius = "5px";
+    legend.style.fontFamily = "Arial, sans-serif";
+    legend.style.fontSize = "14px";
+    legend.style.zIndex = "1000";
+
+    // Add instructions text
+    legend.innerHTML = `
+      <div style="margin-bottom: 8px"><b>Controls:</b></div>
+      <div>• Click and drag to rotate view</div>
+      <div>• Scroll to zoom in/out</div>
+      <div>• Press space bar to toggle auto rotation</div>
+      <!-- <div>• Click on islands to navigate</div> -->
+    `;
+
+    document.body.appendChild(legend);
   }
   initStats() {
     // STATS
@@ -125,12 +152,28 @@ class Scene {
     this.stats.domElement.style.position = "absolute";
     this.stats.domElement.style.left = "0px";
     this.stats.domElement.style.top = "0px";
-    document.body.appendChild(this.stats.domElement);
+    // document.body.appendChild(this.stats.domElement);
   }
   initScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = null; /*new THREE.Color(0xa3e2ff)*/
-    this.scene.fog = new THREE.FogExp2(0x6dd5fa, 0.015);
+    const topColor = new THREE.Color("#6dd5fa");
+    const bottomColor = new THREE.Color("#ffefff");
+    const gradientTexture = new THREE.CanvasTexture(
+      (() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 2;
+        canvas.height = 512;
+        const context = canvas.getContext("2d");
+        const gradient = context.createLinearGradient(0, 0, 0, 512);
+        gradient.addColorStop(0, topColor.getStyle());
+        gradient.addColorStop(1, bottomColor.getStyle());
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 2, 512);
+        return canvas;
+      })()
+    );
+    this.scene.background = gradientTexture;
+    this.scene.fog = new THREE.FogExp2("#6dd5fa", 0.007);
   }
   initCamera() {
     this.camera = new THREE.PerspectiveCamera(
@@ -141,20 +184,25 @@ class Scene {
     );
     //this.camera.position.set(0, 3.5, 22);
     this.camera.updateProjectionMatrix();
-    this.camera.position.set(-40, 8.5, 25);
+    this.camera.position.set(-40, 8.5, 40);
     this.camera.lookAt(this.scene.position);
   }
   initControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    // Force control
-    // controls.minPolarAngle = -Math.PI*.45;
-    // controls.maxPolarAngle = Math.PI*.45;
-    this.controls.enableDamping = false; // adds smooth movement
+    this.controls.enableDamping = false;
     this.controls.dampingFactor = 0.05;
-    this.controls.minDistance = 20;
+    this.controls.minDistance = 35;
     this.controls.maxDistance = 100;
     this.controls.autoRotate = true;
-    this.controls.autoRotateSpeed = -2;
+    this.controls.autoRotateSpeed = -0.2;
+
+    // Add space bar event listener
+    window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        this.autoRotationEnabled = !this.autoRotationEnabled;
+        this.controls.autoRotate = this.autoRotationEnabled;
+      }
+    });
   }
   initRenderer() {
     let pixelRatio = window.devicePixelRatio;
@@ -172,15 +220,15 @@ class Scene {
     this.renderer.setSize(container.width, container.height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setClearColor(0xc5f5f5, 0);
-    this.renderer
-      .physicallyCorrectLights; /*accurate lighting that uses SI units.*/
+    this.renderer.physicallyCorrectLights;
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.shadowMap.soft = true;
     document.body.appendChild(canvas);
   }
   initLights() {
-    this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.5, 100);
-    this.light = new THREE.HemisphereLight(0xffffff, 0xb3858c, 1.5);
+    this.directionalLight = new THREE.DirectionalLight("#ffb157", 2.5);
+    this.light = new THREE.HemisphereLight("#ffffff", "#b3858c", 1.2);
 
     this.scene.add(this.light);
     this.scene.add(this.directionalLight);
@@ -188,10 +236,19 @@ class Scene {
     this.directionalLight.position.set(10, 12, 8);
     this.directionalLight.castShadow = true;
     this.directionalLight.receiveShadow = true;
-    this.directionalLight.shadow.mapSize.width = 512; // default
-    this.directionalLight.shadow.mapSize.height = 512; // default
-    this.directionalLight.shadow.camera.near = 0.5; // default
+
+    // Adjust these shadow camera values
+    this.directionalLight.shadow.mapSize.width = 2048; // Increase resolution
+    this.directionalLight.shadow.mapSize.height = 2048; // Increase resolution
+    this.directionalLight.shadow.camera.near = 0.5;
     this.directionalLight.shadow.camera.far = 500;
+    this.directionalLight.shadow.bias = -0.001;
+
+    // Add these lines to adjust the shadow camera frustum
+    this.directionalLight.shadow.camera.left = -30;
+    this.directionalLight.shadow.camera.right = 30;
+    this.directionalLight.shadow.camera.top = 30;
+    this.directionalLight.shadow.camera.bottom = -30;
   }
   render() {
     this.stats.begin();
@@ -202,12 +259,13 @@ class Scene {
   }
   init() {
     this.initStats();
+    this.initLegend();
     this.initScene();
     this.initCamera();
     this.initRenderer();
     this.initControls();
     this.initLights();
-    this.initClickHandler();
+    // this.initClickHandler();
   }
   initClickHandler() {
     this.cameraController = new CameraController(this.camera, this.controls);
@@ -331,23 +389,28 @@ class CameraController {
 }
 
 class Island {
-  constructor(scenesss, params) {
+  constructor(scene, camera, params) {
     this.params = {
       x: 0,
       y: 0,
       z: 0,
       herbs: 2,
+      fadeStartDistance: 100,
+      fadeEndDistance: 300,
       ...params,
     };
 
     // Create group and add to scene
     this.island = new THREE.Group();
-    scenesss.add(this.island);
+    scene.add(this.island);
 
     // Position according to params
     this.island.position.x = this.params.x;
     this.island.position.y = this.params.y;
     this.island.position.z = this.params.z;
+
+    // Store camera reference
+    this.camera = camera;
 
     // Scale the entire island
     this.island.scale.set(landScale, landScale, landScale);
@@ -359,39 +422,84 @@ class Island {
       opacity: 0.8,
       flatShading: true,
     });
+
     this.greenMaterial = new THREE.MeshPhongMaterial({
+      color: 0x379351,
+      shininess: 80,
+      bumpMap: noiseMap(256, 20, 10),
+      bumpScale: 50.15,
+      flatShading: true,
+    });
+    this.plainGreenMaterial = new THREE.MeshPhongMaterial({
       color: 0x379351,
       flatShading: true,
     });
+
     this.earthMaterial = new THREE.MeshPhongMaterial({
       color: 0x664e31,
       flatShading: true,
     });
-    this.stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x9eaeac });
+    this.stoneMaterial = new THREE.MeshPhongMaterial({
+      color: 0x9eaeac,
+      shadowSide: THREE.FrontSide,
+    });
 
     // Add the instance reference to the group
     this.island.__islandInstance = this;
+
+    // Make all materials transparent
+    this.cloudMaterial.transparent = true;
+    this.greenMaterial.transparent = true;
+    this.plainGreenMaterial.transparent = true;
+    this.earthMaterial.transparent = true;
+    this.stoneMaterial.transparent = true;
+
+    // Add update method to animation loop
+    const animate = () => {
+      this.updateScale();
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }
+
+  updateScale() {
+    const distance = this.camera.position.distanceTo(this.island.position);
+    const fadeStart = 100; // Distance where fade begins
+    const fadeEnd = 600; // Distance where object disappears
+    const scale = 1 - (distance - fadeStart) / (fadeEnd - fadeStart);
+    this.island.scale.setScalar(Math.max(0, Math.min(1, scale)) * landScale);
   }
 
   createGroundParticle() {
-    const geoGroundParticule = new THREE.TetrahedronGeometry(
-      randomize(0.5, 2.5), // Reduced max size from 5.5 to 2.5
-      randomize(2, 3)
-    );
-    jitter(geoGroundParticule, 0.0);
-    geoGroundParticule.translate(
-      -5,
-      randomize(-4, -1, true),
-      randomize(-2, 2, true)
-    );
-    const particule = new THREE.Mesh(geoGroundParticule, this.earthMaterial);
-    particule.scale.set(
-      randomize(1, 1.5, true),
-      randomize(1, 1.8, true),
-      randomize(1, 1.5, true)
-    );
-    particule.position.set(-5, randomize(-4, -1, true), randomize(-2, 2, true));
-    return particule;
+    const particles = new THREE.Group();
+
+    for (let i = 0; i < 100; i++) {
+      const geoGroundParticule = new THREE.TetrahedronGeometry(
+        randomize(1.2, 2.8), // Smaller size range
+        randomize(2, 3)
+      );
+      jitter(geoGroundParticule, 0.0);
+
+      const particule = new THREE.Mesh(geoGroundParticule, this.earthMaterial);
+
+      // Randomize scale (smaller)
+      particule.scale.set(
+        randomize(0.1, 0.2, true),
+        randomize(0.1, 0.2, true),
+        randomize(0.1, 0.2, true)
+      );
+
+      // Spread particles around more
+      particule.position.set(
+        randomize(randomize(-20, -5, true), randomize(5, 20, true), true),
+        randomize(-25, 2, true),
+        randomize(randomize(-20, -5, true), randomize(5, 20, true), true)
+      );
+
+      particles.add(particule);
+    }
+
+    return particles;
   }
 
   drawGround() {
@@ -405,9 +513,10 @@ class Island {
 
     // Create grass top
     const geoGreen = new THREE.CylinderGeometry(7.4, 5.5, 3.0, 36, 3);
-    jitter(geoGreen, 0.3);
+    jitter(geoGreen, 0.2);
     geoGreen.translate(0, 3.3, 0);
-    const green = new THREE.Mesh(geoGreen, this.greenMaterial);
+
+    const green = new THREE.Mesh(geoGreen, this.plainGreenMaterial);
     geoGreen.scale(1.05, 1, 1.05);
 
     // Add ground particle
@@ -442,7 +551,7 @@ class Island {
     this.clouds.add(cloud2);
     this.clouds.add(cloud3);
 
-    shadowSupport(this.clouds);
+    // shadowSupport(this.clouds);
 
     this.clouds.position.x = -5;
     this.clouds.position.y = 8;
@@ -453,18 +562,28 @@ class Island {
     const cloneCloudGroup = this.clouds.clone();
     cloneCloudGroup.scale.set(1, 1.2, 1.2);
     cloneCloudGroup.position.x = 6;
-    cloneCloudGroup.position.y = -9;
+    cloneCloudGroup.position.y = 9;
     cloneCloudGroup.position.z = 4;
 
+    const cloneCloudGroup2 = this.clouds.clone();
+    cloneCloudGroup2.scale.set(1, 0.7, 0.7);
+    cloneCloudGroup2.position.x = randomize(-5, 9, true);
+    cloneCloudGroup2.position.y = 5;
+    cloneCloudGroup2.position.z = randomize(-9, 9, true);
+
     this.island.add(cloneCloudGroup);
+    this.island.add(cloneCloudGroup2);
   }
+
   drawRocks() {
     this.rocks = new THREE.Group();
     const geoRocks = new THREE.DodecahedronGeometry(1, 0);
+
     const rock = new THREE.Mesh(geoRocks, this.stoneMaterial);
-    rock.scale.set(randomize(0.8, 1.2, true), randomize(0.5, 3, true), 1);
+    rock.scale.set(randomize(0.8, 1.2, true), randomize(0.9, 2.8, true), 1);
+
     const rock2 = rock.clone();
-    rock2.scale.set(randomize(0.8, 1.2, true), randomize(0.5, 3, true), 1);
+    rock2.scale.set(randomize(0.8, 1.2, true), randomize(1, 3, true), 1);
     rock2.position.set(1.2, 0, -1.3);
 
     this.rocks.add(rock);
@@ -473,9 +592,9 @@ class Island {
     this.rocks.position.y = 0;
     this.rocks.position.z = -2.5;
 
-    shadowSupport(this.rocks);
     this.island.add(this.rocks);
   }
+
   drawHerbs(position = { x: 1.1, y: 0, z: 0 }) {
     const width = 0.2;
     this.herbs = new THREE.Group();
@@ -508,6 +627,7 @@ class Island {
     shadowSupport(this.herbs);
     this.island.add(this.herbs);
   }
+
   init() {
     this.drawGround();
     this.drawCloud();
@@ -522,6 +642,8 @@ class Island {
         z: randomize(-5, 5, true),
       });
     }
+
+    shadowSupport(this.island);
   }
 }
 
@@ -746,6 +868,8 @@ class Bblock {
     this.drawBody();
     this.drawArms();
     this.drawLegs();
+
+    shadowSupport(this.bblock);
   }
 }
 
@@ -823,7 +947,7 @@ class SignPost {
         const textGeometry = new TextGeometry(line, {
           font: font,
           size: 0.4,
-          height: 0.05,
+          depth: 0.05,
           curveSegments: 12,
           bevelEnabled: false,
         });
@@ -843,7 +967,7 @@ class SignPost {
 
         // Center each line horizontally and stack vertically
         textMesh.position.x = -lineWidth / 2;
-        textMesh.position.y = 4.98 - index * lineHeight;
+        textMesh.position.y = 5.1 - index * lineHeight;
         textMesh.position.z = 0.15;
 
         textGroup.add(textMesh);
@@ -861,6 +985,7 @@ class SignPost {
 
   init() {
     this.drawPost();
+    shadowSupport(this.signpost);
   }
 }
 
@@ -868,15 +993,21 @@ class SignPost {
  * GENERATOR
  * ------------------------------------------------------------------------
  */
-// Generate Scene
+// Scene
 const scene = new Scene();
 scene.init();
 scene.render();
 
-// Generate Island
-const island = new Island(scene.scene, { x: 0, y: 0, z: 0, herbs: 10 });
+// Island
+const island = new Island(scene.scene, scene.camera, {
+  x: 0,
+  y: 0,
+  z: 0,
+  herbs: 10,
+});
 island.init();
-// Generate Bblock
+
+// Byron
 const bblock = new Bblock(scene.scene, {
   x: 0,
   y: -2,
@@ -885,70 +1016,68 @@ const bblock = new Bblock(scene.scene, {
   bun: false,
 });
 bblock.init();
+
+// Jen
 const bblockJen = new Bblock(scene.scene, {
   x: 5,
   y: -2,
   z: 0,
-  hairColor: 0x593127,
+  hairColor: 0x5e3014,
   bun: true,
   hairDown: true,
 });
 bblockJen.init();
 
-// Generate SignPost
+// Welcome Signpost
 const signpost = new SignPost(scene.scene, {
   x: 0,
   y: -3,
-  z: 20,
+  z: 15,
   rotation: 0,
-  text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\nCape Town",
+  text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\nSave the date",
 });
 signpost.init();
 
-// Generate SignPost
+// More Details Signpost
 const signpost2 = new SignPost(scene.scene, {
-  x: 20,
-  y: -3,
+  x: 15,
+  y: -2,
   z: 0,
   rotation: 1,
-  text: "More details\ncoming soon!",
+  text: "\n\nMore details\ncoming soon!",
 });
 signpost2.init();
 
-// Generate SignPost
+// Expansion Signpost
 const signpost3 = new SignPost(scene.scene, {
   x: 4,
   y: -3,
-  z: -20,
+  z: -15,
   rotation: 3,
-  text: "Either by email\nor here\ndepending on\nhow many more\nhours i want to\nspend on this :)",
+  text: "...either by email\nor here depending \non how many more\nhours i want to\nspend on this :)",
 });
 signpost3.init();
 
-// Other Island Example
-const island2 = new Island(scene.scene, { x: 25, y: -40, z: -70, herbs: 10 });
+// ========================================================
+// Other Islands
+
+// Island 2
+const island2 = new Island(scene.scene, scene.camera, {
+  x: 25,
+  y: -40,
+  z: -200,
+  herbs: 10,
+});
 island2.init();
 
-const signpost4 = new SignPost(scene.scene, {
-  x: 25,
-  y: -43,
-  z: -70,
-  rotation: 2,
-  text: "Welcome to\nIsland 2!",
-});
-signpost4.init();
-
-const island3 = new Island(scene.scene, { x: -70, y: 20, z: -100, herbs: 10 });
-island3.init();
-
-const signpost5 = new SignPost(scene.scene, {
+// Island 3
+const island3 = new Island(scene.scene, scene.camera, {
   x: -70,
-  y: 17,
-  z: -100,
-  rotation: 4,
-  text: "Welcome to\nIsland 3!",
+  y: 50,
+  z: -500,
+  herbs: 10,
 });
-signpost5.init();
+island3.init();
 
 // Resize
 window.addEventListener("resize", () => {
