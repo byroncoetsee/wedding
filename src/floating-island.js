@@ -101,6 +101,55 @@ function noiseMap(size = 256, intensity = 20, repeat = 30) {
   return texture;
 }
 
+const setupIslandLight = (
+  scene,
+  position,
+  color = "#ffb157",
+  intensity = 1.5
+) => {
+  if (intensity == 0) {
+    return;
+  }
+
+  const directionalLight = new THREE.DirectionalLight(color, intensity);
+  scene.add(directionalLight);
+
+  console.log(position);
+  directionalLight.position.set(
+    position.x + 10,
+    position.y + 20,
+    position.z + 10
+  );
+  directionalLight.castShadow = true;
+  directionalLight.receiveShadow = true;
+
+  // Create and set target position
+  const target = new THREE.Object3D();
+  target.position.set(position.x, position.y, position.z);
+  scene.add(target);
+  directionalLight.target = target;
+
+  directionalLight.decay = 0;
+
+  // Shadow settings
+  directionalLight.shadow.mapSize.width = 1024;
+  directionalLight.shadow.mapSize.height = 1024;
+  directionalLight.shadow.camera.near = 5;
+  directionalLight.shadow.camera.far = 100;
+  directionalLight.shadow.bias = -0.001;
+
+  // Shadow camera frustum
+  directionalLight.shadow.camera.left = -30;
+  directionalLight.shadow.camera.right = 30;
+  directionalLight.shadow.camera.top = 30;
+  directionalLight.shadow.camera.bottom = -30;
+
+  // const helper = new THREE.CameraHelper(directionalLight.shadow.camera);
+  // scene.add(helper);
+
+  return directionalLight;
+};
+
 class Scene {
   constructor(params) {
     this.params = {
@@ -188,7 +237,7 @@ class Scene {
     );
     //this.camera.position.set(0, 3.5, 22);
     this.camera.updateProjectionMatrix();
-    this.camera.position.set(-40, 8.5, 40);
+    this.camera.position.set(-35, 10, 35);
     this.camera.lookAt(this.scene.position);
   }
 
@@ -234,28 +283,8 @@ class Scene {
   }
 
   initLights() {
-    this.directionalLight = new THREE.DirectionalLight("#ffb157", 2.5);
-    this.light = new THREE.HemisphereLight("#ffffff", "#b3858c", 1.2);
-
+    this.light = new THREE.HemisphereLight("#ffffff", "#ffffff", 0.3); //b3858c
     this.scene.add(this.light);
-    this.scene.add(this.directionalLight);
-
-    this.directionalLight.position.set(10, 12, 8);
-    this.directionalLight.castShadow = true;
-    this.directionalLight.receiveShadow = true;
-
-    // Adjust these shadow camera values
-    this.directionalLight.shadow.mapSize.width = 2048; // Increase resolution
-    this.directionalLight.shadow.mapSize.height = 2048; // Increase resolution
-    this.directionalLight.shadow.camera.near = 0.5;
-    this.directionalLight.shadow.camera.far = 500;
-    this.directionalLight.shadow.bias = -0.001;
-
-    // Add these lines to adjust the shadow camera frustum
-    this.directionalLight.shadow.camera.left = -30;
-    this.directionalLight.shadow.camera.right = 30;
-    this.directionalLight.shadow.camera.top = 30;
-    this.directionalLight.shadow.camera.bottom = -30;
   }
 
   render() {
@@ -274,7 +303,7 @@ class Scene {
     this.initRenderer();
     this.initControls();
     this.initLights();
-    this.initClickHandler();
+    // this.initClickHandler();
   }
 
   initClickHandler() {
@@ -408,8 +437,21 @@ class Island {
       fadeStartDistance: 100,
       fadeEndDistance: 700,
       items: [], // Add this to store related items
+      lightColor: "#ffb157",
+      lightIntensity: 1.5,
       ...params,
     };
+
+    setupIslandLight(
+      scene,
+      {
+        x: this.params.x,
+        y: this.params.y,
+        z: this.params.z,
+      },
+      this.params.lightColor,
+      this.params.lightIntensity
+    );
 
     // Create group and add to scene
     this.island = new THREE.Group();
@@ -469,9 +511,10 @@ class Island {
   }
 
   addItem(item) {
+    // console.log("addItem", item);
     item.parent?.remove(item);
     this.island.add(item);
-    this.params.items.push(item);
+    // this.params.items.push(item);
   }
 
   updateScale() {
@@ -513,14 +556,6 @@ class Island {
     return particles;
   }
 
-  createGrassGeometry() {
-    const geoGreen = new THREE.CylinderGeometry(22.2, 16.5, 9.0, 36, 3);
-    jitter(geoGreen, 0.6);
-    geoGreen.translate(0, 9.9, 0);
-    geoGreen.scale(1.05, 1, 1.05);
-    return geoGreen;
-  }
-
   drawGround() {
     this.ground = new THREE.Group();
 
@@ -530,17 +565,12 @@ class Island {
     geoGround.translate(0, -1.5, 0);
     const earth = new THREE.Mesh(geoGround, this.earthMaterial);
 
-    // Create grass top
-    const geoGreen = this.createGrassGeometry();
-    const green = new THREE.Mesh(geoGreen, this.plainGreenMaterial);
-
     // Add ground particle
     const particule = this.createGroundParticle();
     this.ground.add(particule);
 
     // Combine meshes
     this.ground.add(earth);
-    this.ground.add(green);
     this.ground.position.y = -16.8;
     shadowSupport(this.ground);
     this.island.add(this.ground);
@@ -565,8 +595,6 @@ class Island {
     this.clouds.add(cloud);
     this.clouds.add(cloud2);
     this.clouds.add(cloud3);
-
-    // shadowSupport(this.clouds);
 
     this.clouds.position.x = -15;
     this.clouds.position.y = 24;
@@ -664,28 +692,33 @@ class Island {
 }
 
 class GroundSurface {
-  constructor(scenesss, params = {}) {
-    this.params = params;
-    // this.scene = scene;
+  constructor(params = {}) {
+    this.params = {
+      x: 0,
+      y: 0,
+      z: 0,
+      groundColor: 0x379351,
+      material:
+        params.material ||
+        new THREE.MeshPhongMaterial({
+          color: params.groundColor || 0x379351,
+          flatShading: true,
+        }),
+      ...params,
+    };
+
+    // this.params.material.shadowSide = THREE.FrontSide;
+    // this.params.material.needsUpdate = true;
   }
 
   createGroundGeometry() {
-    const geometry = new THREE.CylinderGeometry(10, 8, 4, 8);
-    jitter(geometry, 0.8);
-    return geometry;
-  }
-
-  init() {
-    this.ground = new THREE.Mesh(
-      this.createGroundGeometry(),
-      new THREE.MeshPhongMaterial({
-        color: 0x664e31,
-        flatShading: true,
-      })
-    );
-    this.ground.position.y = -16.8;
-    shadowSupport(this.ground);
-    return this.ground;
+    const geoGreen = new THREE.CylinderGeometry(22.2, 16.5, 9.0, 36, 3);
+    jitter(geoGreen, 0.6);
+    geoGreen.translate(0, -7.5, 0);
+    geoGreen.scale(1.05, 1, 1.05);
+    const mesh = new THREE.Mesh(geoGreen, this.params.material);
+    shadowSupport(mesh);
+    return mesh;
   }
 }
 
@@ -698,6 +731,7 @@ class Bblock {
       bun: false,
       hairDown: false,
       hairColor: 0xffffff,
+      lookAngle: 0,
       ...params,
     };
     // Create group and add to scene
@@ -733,6 +767,12 @@ class Bblock {
       color: 0xffffff,
       flatShading: false,
     });
+
+    // Add individual frequencies for each arm with random variation
+    this.armFrequencies = [
+      3 + Math.random() * 2, // Random frequency between 3-5
+      4.5 + Math.random() * 2, // Random frequency between 4.5-6.5
+    ];
   }
   drawHead() {
     this.head = new THREE.Mesh(
@@ -749,7 +789,7 @@ class Bblock {
     );
     this.hair.castShadow = true;
     this.hair.receiveShadow = true;
-    this.hair.position.set(0, 5.3, -0.3);
+    this.hair.position.set(0, 0.5, -0.3);
 
     this.hairFront = new THREE.Mesh(
       new THREE.BoxGeometry(1.5, 0.5, 0.8),
@@ -757,7 +797,7 @@ class Bblock {
     );
     this.hairFront.castShadow = true;
     this.hairFront.receiveShadow = true;
-    this.hairFront.position.set(0, 6.3, 0.85);
+    this.hairFront.position.set(0, 1.5, 0.9);
 
     const tuft1 = new THREE.BoxGeometry(1.3, 1.3, 1.3);
     const tuft2 = new THREE.BoxGeometry(0.8, 0.8, 0.8);
@@ -770,9 +810,9 @@ class Bblock {
     this.hairBun.add(tuft2Mesh);
 
     tuft1Mesh.position.set(0, 0, 0);
-    tuft2Mesh.position.set(0, 0.5, -0.5);
+    tuft2Mesh.position.set(0, 0.7, -0.5);
 
-    this.hairBun.position.set(0, 6.3, -1.3);
+    this.hairBun.position.set(0, 1.3, -1.3);
     shadowSupport(this.hairBun);
 
     // Create long hair at back
@@ -783,18 +823,17 @@ class Bblock {
     );
     this.hairDown.add(longHair);
     longHair.position.set(0, -1.5, -1);
-    this.hairDown.position.set(0, 6, 0);
+    this.hairDown.position.set(0, 1, 0);
     shadowSupport(this.hairDown);
-
-    this.bblock.add(this.head);
-    this.bblock.add(this.hair);
-    this.bblock.add(this.hairFront);
+    this.head.add(this.hair);
+    this.head.add(this.hairFront);
     if (this.params.bun) {
-      this.bblock.add(this.hairBun);
+      this.head.add(this.hairBun);
     }
     if (this.params.hairDown) {
-      this.bblock.add(this.hairDown);
+      this.head.add(this.hairDown);
     }
+    this.bblock.add(this.head);
   }
   drawEyes() {
     this.retines = new THREE.Group();
@@ -904,12 +943,87 @@ class Bblock {
       leg.rotation.x = degreesToRadians(angle * m);
     });
   }
+
+  rotateHead(angle) {
+    if (this.head) {
+      this.head.rotation.y = degreesToRadians(angle);
+    }
+  }
+
+  animateArms() {
+    const time = Date.now() * 0.001; // Convert to seconds
+
+    this.arms.forEach((arm, i) => {
+      // Each arm uses its own frequency plus some random variation
+      const randomOffset = Math.random() * 0.2 - 5; // Random value between -0.1 and 0.1
+      const angle = Math.sin(time * this.armFrequencies[i] + randomOffset) * 30;
+      const m = i % 2 === 0 ? 1 : -1;
+      arm.rotation.x = degreesToRadians(angle * m);
+    });
+  }
+
+  animateHead() {
+    const time = Date.now() * 0.001; // Convert to seconds
+    const cycleLength = 30; // Length of full cycle in seconds
+    const activeTime = 2; // Time spent moving in seconds
+    const delayTime = 0.5; // Time to pause at peak in seconds
+
+    // Get position in current cycle
+    const cyclePosition = time % cycleLength;
+
+    // Only animate during active portion of cycle
+    if (cyclePosition < activeTime) {
+      // Calculate normalized position in movement (0 to 1)
+      const normalizedPosition = cyclePosition / activeTime;
+
+      // Add delay at peak by modifying the curve
+      let angle;
+      if (normalizedPosition < 0.5 - delayTime / activeTime) {
+        // First half of movement
+        angle = Math.sin(
+          ((normalizedPosition / (0.5 - delayTime / activeTime)) * Math.PI) / 2
+        );
+      } else if (normalizedPosition > 0.5 + delayTime / activeTime) {
+        // Second half of movement
+        angle = Math.cos(
+          (((normalizedPosition - (0.5 + delayTime / activeTime)) /
+            (0.5 - delayTime / activeTime)) *
+            Math.PI) /
+            2
+        );
+      } else {
+        angle = 1;
+      }
+
+      angle = angle * Math.abs(this.params.lookAngle);
+      if (this.params.lookAngle < 0) {
+        angle *= -1;
+      }
+
+      // If lookAngle is positive, clamp between 0 and lookAngle
+      // If lookAngle is negative, clamp between lookAngle and 0
+      const clampedAngle =
+        this.params.lookAngle >= 0
+          ? Math.max(0, Math.min(angle, this.params.lookAngle))
+          : Math.min(0, Math.max(angle, this.params.lookAngle));
+      this.rotateHead(clampedAngle);
+    }
+  }
+
   init() {
     this.drawHead();
     this.drawEyes();
     this.drawBody();
     this.drawArms();
     this.drawLegs();
+
+    // Add animation to render loop
+    const animate = () => {
+      this.animateArms();
+      this.animateHead();
+      requestAnimationFrame(animate);
+    };
+    animate();
 
     shadowSupport(this.bblock);
   }
@@ -1043,17 +1157,18 @@ const buildIsland_1 = () => {
     y: 0,
     z: 0,
     herbs: 10,
+    lightColor: "#ffb039",
+    lightIntensity: 2.5,
   });
   island.init();
 
   // Ground
-  // const ground = new GroundSurface(scene.scene, {
-  //   x: 0,
-  //   y: 0,
-  //   z: 0,
-  // });
-  // ground.init();
-  // island.addItem(ground.ground);
+  const ground = new GroundSurface({
+    x: island.params.x,
+    y: island.params.y,
+    z: island.params.z,
+  });
+  island.addItem(ground.createGroundGeometry());
 
   // Byron
   const bblock = new Bblock(scene.scene, {
@@ -1062,6 +1177,7 @@ const buildIsland_1 = () => {
     z: 0,
     hairColor: 0xed4928,
     bun: false,
+    lookAngle: 55,
   });
   bblock.init();
   island.addItem(bblock.bblock);
@@ -1074,6 +1190,7 @@ const buildIsland_1 = () => {
     hairColor: 0x5e3014,
     bun: true,
     hairDown: true,
+    lookAngle: -55,
   });
   bblockJen.init();
   island.addItem(bblockJen.bblock);
@@ -1082,7 +1199,7 @@ const buildIsland_1 = () => {
   const signpost = new SignPost(scene.scene, {
     x: 0,
     y: -3,
-    z: 15,
+    z: 20,
     rotation: 0,
     text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\nSave the date",
   });
@@ -1091,7 +1208,7 @@ const buildIsland_1 = () => {
 
   // More Details Signpost
   const signpost2 = new SignPost(scene.scene, {
-    x: 15,
+    x: 18,
     y: -2,
     z: 0,
     rotation: 1,
@@ -1104,7 +1221,7 @@ const buildIsland_1 = () => {
   const signpost3 = new SignPost(scene.scene, {
     x: 4,
     y: -3,
-    z: -15,
+    z: -19,
     rotation: 3,
     text: "...either by email\nor here depending \non how many more\nhours i want to\nspend on this :)",
   });
@@ -1115,12 +1232,22 @@ const buildIsland_1 = () => {
 // Island 2
 const buildIsland_2 = () => {
   const island2 = new Island(scene.scene, scene.camera, {
-    x: 25,
+    x: 35,
     y: -40,
     z: -200,
     herbs: 10,
+    lightColor: "#fffdfa",
+    lightIntensity: 0.8,
   });
   island2.init();
+
+  const ground = new GroundSurface({
+    x: island2.params.x,
+    y: island2.params.y,
+    z: island2.params.z,
+    groundColor: 0xffffff,
+  });
+  island2.addItem(ground.createGroundGeometry());
 };
 
 // Island 3
@@ -1130,8 +1257,18 @@ const buildIsland_3 = () => {
     y: 50,
     z: -500,
     herbs: 10,
+    lightColor: "#ffd599",
+    lightIntensity: 0.5,
   });
   island3.init();
+
+  const ground = new GroundSurface({
+    x: island3.params.x,
+    y: island3.params.y,
+    z: island3.params.z,
+    groundColor: "#ffc582",
+  });
+  island3.addItem(ground.createGroundGeometry());
 };
 
 buildIsland_1();
