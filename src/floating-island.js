@@ -6,6 +6,7 @@ import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 var container = { width: window.innerWidth, height: window.innerHeight };
 const landScale = 1;
+let currentUser = null;
 
 // Rotate arms / legs
 const degreesToRadians = (degrees) => {
@@ -148,6 +149,44 @@ const setupIslandLight = (
   // scene.add(helper);
 
   return directionalLight;
+};
+
+class User {
+  constructor(data) {
+    this.id = data.id;
+    this.name = data.name;
+    this.partnerName = data.partnerName;
+    this.hasPlusOne = data.partnerName !== null;
+    this.isFamily = data.family;
+    this.kidNames = data.kidNames;
+    this.numberOfKids = data.kidNames.length;
+  }
+
+  getTotalGuests() {
+    let total = 1; // The main guest
+    if (this.hasPlusOne) total++;
+    total += this.numberOfKids;
+    return total;
+  }
+
+  isVIP() {
+    return this.isFamily;
+  }
+}
+
+const initUser = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = parseInt(urlParams.get("user"));
+
+  try {
+    const response = await fetch("/data.json");
+    const guestData = await response.json();
+    const userData =
+      guestData.find((guest) => guest.id === userId) || guestData[0];
+    currentUser = new User(userData);
+  } catch (error) {
+    // Silently handle error
+  }
 };
 
 // Add this class before the Scene class
@@ -1325,11 +1364,13 @@ const buildIsland_1 = () => {
 
   // More Details Signpost
   const signpost2 = new SignPost(scene.scene, {
-    x: 18,
+    x: 20,
     y: -2,
-    z: 0,
-    rotation: 1,
-    text: "\n\nMore details\ncoming soon!",
+    z: 1,
+    rotation: 1.4,
+    text: currentUser?.partnerName
+      ? `\n${currentUser.name} + ${currentUser.partnerName}\n\nMore details\ncoming soon!`
+      : `\n${currentUser.name}\n\nMore details\ncoming soon!`,
   });
   signpost2.init();
   island.addItem(signpost2.signpost);
@@ -1454,10 +1495,12 @@ const buildIsland_4 = () => {
   };
 };
 
-buildIsland_1();
-buildIsland_2();
-buildIsland_3();
-buildIsland_4();
+initUser().then(() => {
+  buildIsland_1();
+  buildIsland_2();
+  buildIsland_3();
+  buildIsland_4();
+});
 
 // Resize
 window.addEventListener("resize", () => {
