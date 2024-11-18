@@ -5,6 +5,7 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 var container = { width: window.innerWidth, height: window.innerHeight };
+const startCamDistanceMultiplier = 2;
 const landScale = 1;
 let currentUser = null;
 
@@ -375,7 +376,11 @@ class Scene {
     );
     //this.camera.position.set(0, 3.5, 22);
     this.camera.updateProjectionMatrix();
-    this.camera.position.set(-35, 10, 35);
+    this.camera.position.set(
+      -25 * startCamDistanceMultiplier,
+      10 + 5 * startCamDistanceMultiplier,
+      25 * startCamDistanceMultiplier
+    );
     this.camera.lookAt(this.scene.position);
   }
 
@@ -384,7 +389,7 @@ class Scene {
     this.controls.enableDamping = false;
     this.controls.dampingFactor = 0.05;
     this.controls.minDistance = 35;
-    this.controls.maxDistance = 100;
+    this.controls.maxDistance = 150;
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = -0.2;
 
@@ -421,7 +426,7 @@ class Scene {
   }
 
   initLights() {
-    this.light = new THREE.HemisphereLight("#ffffff", "#ffffff", 0.3); //b3858c
+    this.light = new THREE.HemisphereLight("#ffa600", "#ffffff", 0.3); //b3858c
     this.scene.add(this.light);
   }
 
@@ -572,8 +577,8 @@ class Island {
       y: 0,
       z: 0,
       herbs: 2,
-      fadeStartDistance: 100,
-      fadeEndDistance: 700,
+      fadeStartDistance: 200,
+      fadeEndDistance: 400,
       items: [],
       lightColor: "#ffb157",
       lightIntensity: 1.5,
@@ -710,8 +715,8 @@ class Island {
 
   updateScale() {
     const distance = this.camera.position.distanceTo(this.island.position);
-    const fadeStart = 300;
-    const fadeEnd = 600;
+    const fadeStart = 400;
+    const fadeEnd = 700;
     const scale = 1 - (distance - fadeStart) / (fadeEnd - fadeStart);
     this.island.scale.setScalar(Math.max(0, Math.min(1, scale)) * landScale);
   }
@@ -1440,7 +1445,7 @@ const buildIsland_1 = () => {
 const buildIsland_2 = () => {
   const island2 = new Island(scene.scene, scene.camera, {
     x: 35,
-    y: -40,
+    y: 30,
     z: -200,
     herbs: 10,
     lightColor: "#fffdfa",
@@ -1471,9 +1476,9 @@ const buildIsland_2 = () => {
 // Island 3
 const buildIsland_3 = () => {
   const island3 = new Island(scene.scene, scene.camera, {
-    x: -70,
-    y: 50,
-    z: -500,
+    x: 150,
+    y: 70,
+    z: -120,
     herbs: 10,
     lightColor: "#ffd599",
     lightIntensity: 0.5,
@@ -1503,8 +1508,8 @@ const buildIsland_3 = () => {
 // Island 4
 const buildIsland_4 = () => {
   const island4 = new Island(scene.scene, scene.camera, {
-    x: -80,
-    y: 100,
+    x: -120,
+    y: 70,
     z: -300,
     herbs: 100,
     lightColor: "#33c5e6",
