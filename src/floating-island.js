@@ -367,7 +367,7 @@ class Scene {
     this.initRenderer();
     this.initControls();
     this.initLights();
-    this.initClickHandler();
+    // this.initClickHandler();
   }
 
   initClickHandler() {
