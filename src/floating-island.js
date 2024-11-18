@@ -509,7 +509,7 @@ class Island {
 
     // Add lightning light
     if (this.params.enableLightning) {
-      this.lightningLight = new THREE.PointLight("#72b4ff", 10, 100, 0);
+      this.lightningLight = new THREE.PointLight("#72b4ff", 0, 100, 0);
       this.lightningLight.position.set(
         this.params.x,
         this.params.y + 10,
@@ -1413,9 +1413,9 @@ const buildIsland_3 = () => {
 // Island 4
 const buildIsland_4 = () => {
   const island4 = new Island(scene.scene, scene.camera, {
-    x: 100,
+    x: -80,
     y: 100,
-    z: -400,
+    z: -300,
     herbs: 100,
     lightColor: "#33c5e6",
     lightIntensity: 0.6,
@@ -1428,17 +1428,16 @@ const buildIsland_4 = () => {
     x: island4.params.x,
     y: island4.params.y,
     z: island4.params.z,
-    groundColor: 0x9ee6f7,
   });
   island4.addItem(ground.createGroundGeometry());
 
   // Add signpost
   const signpost = new SignPost(scene.scene, {
-    x: 0,
+    x: -8,
     y: -3,
     z: 20,
-    rotation: 0.3,
-    text: "Welcome to Island 4!\nNot much to see here...\n\nYet.",
+    rotation: -0.5,
+    text: "\nWhy you snooping?\n\nGo away!",
   });
   signpost.init();
   island4.addItem(signpost.signpost);
