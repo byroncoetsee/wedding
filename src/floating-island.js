@@ -160,6 +160,9 @@ class User {
     this.isFamily = data.family;
     this.kidNames = data.kidNames;
     this.numberOfKids = data.kidNames.length;
+    this.confirmed = data.confirmed;
+    this.accommodation = data.accom;
+    this.dietaryRequirements = data.dietary;
   }
 
   getTotalGuests() {
@@ -169,23 +172,55 @@ class User {
     return total;
   }
 
+  getFamilyString() {
+    if (!this.hasPlusOne && this.numberOfKids === 0) {
+      return this.name;
+    }
+
+    const names = [this.name];
+    if (this.hasPlusOne) {
+      names.push(this.partnerName);
+    }
+    names.push(...this.kidNames);
+
+    // Split into pairs while maintaining comma placement
+    const pairs = [];
+    for (let i = 0; i < names.length; i += 2) {
+      if (i + 2 < names.length) {
+        // More names will follow, add comma
+        pairs.push(`${names[i]}, ${names[i + 1]}`);
+      } else if (i + 1 < names.length) {
+        // Last two names
+        pairs.push(`${names[i]} and ${names[i + 1]}`);
+      } else {
+        // Single name at the end
+        pairs.push(names[i]);
+      }
+    }
+
+    return pairs.join("\n");
+  }
+
   isVIP() {
     return this.isFamily;
   }
 }
 
 const initUser = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const userId = parseInt(urlParams.get("user"));
+  const userId = parseInt(localStorage.getItem("userId"));
 
   try {
     const response = await fetch("/data.json");
     const guestData = await response.json();
-    const userData =
-      guestData.find((guest) => guest.id === userId) || guestData[0];
-    currentUser = new User(userData);
+    const userData = guestData.find((guest) => guest.id === userId);
+    if (userData) {
+      currentUser = new User(userData);
+    } else {
+      currentUser = null;
+    }
   } catch (error) {
     // Silently handle error
+    currentUser = null;
   }
 };
 
@@ -1368,9 +1403,11 @@ const buildIsland_1 = () => {
     y: -2,
     z: 1,
     rotation: 1.4,
-    text: currentUser?.partnerName
-      ? `\n${currentUser.name} + ${currentUser.partnerName}\n\nMore details\ncoming soon!`
-      : `\n${currentUser.name}\n\nMore details\ncoming soon!`,
+    text: currentUser
+      ? `${
+          currentUser.numberOfKids > 0 ? "" : "\n"
+        }${currentUser.getFamilyString()}\n\nMore details\ncoming soon!`
+      : "\n\nMore details\ncoming soon!",
   });
   signpost2.init();
   island.addItem(signpost2.signpost);
@@ -1495,12 +1532,19 @@ const buildIsland_4 = () => {
   };
 };
 
-initUser().then(() => {
-  buildIsland_1();
-  buildIsland_2();
-  buildIsland_3();
-  buildIsland_4();
-});
+initUser()
+  .then((success) => {
+    if (currentUser) {
+      console.log("User initialized: " + currentUser.name);
+      buildIsland_1();
+      buildIsland_2();
+      buildIsland_3();
+      buildIsland_4();
+    }
+  })
+  .catch((error) => {
+    console.error("Failed to initialize user");
+  });
 
 // Resize
 window.addEventListener("resize", () => {
