@@ -1350,6 +1350,7 @@ const buildIsland_1 = () => {
     herbs: 10,
     lightColor: "#ffb039",
     lightIntensity: 2.5,
+    enableLightning: true,
   });
   island.init();
 
@@ -1422,6 +1423,17 @@ const buildIsland_1 = () => {
   });
   signpost3.init();
   island.addItem(signpost3.signpost);
+
+  // Add rain effect
+  const rain = new RainEffect(scene.scene);
+  island.addItem(rain.raindrops);
+
+  // Add rain animation to the render loop
+  const originalRender = scene.render.bind(scene);
+  scene.render = function () {
+    rain.animate();
+    originalRender();
+  };
 };
 
 // Island 2
@@ -1533,7 +1545,7 @@ const buildIsland_4 = () => {
 };
 
 initUser()
-  .then((success) => {
+  .then(() => {
     if (currentUser) {
       console.log("User initialized: " + currentUser.name);
       buildIsland_1();
@@ -1542,7 +1554,7 @@ initUser()
       buildIsland_4();
     }
   })
-  .catch((error) => {
+  .catch(() => {
     console.error("Failed to initialize user");
   });
 

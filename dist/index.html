@@ -9,16 +9,44 @@
 
     <!-- What you snooping in here for? -->
 
-    <style>
-      html,
-      body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        background-color: #b7ecff;
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        // Check URL parameters first
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get("user");
+
+        if (urlUserId) {
+          localStorage.setItem("userId", urlUserId);
+          // Force reload without URL parameters to avoid infinite loop
+          if (window.location.search) {
+            window.location.href = window.location.pathname;
+          }
+        } else {
+          const userId = localStorage.getItem("userId");
+          if (!userId) {
+            const promptDiv = document.getElementById("userIdPrompt");
+            promptDiv.style.display = "block";
+          }
+        }
+      });
+
+      function submitUserId() {
+        const userId = document.getElementById("userIdInput").value;
+        if (userId) {
+          localStorage.setItem("userId", userId);
+          document.getElementById("userIdPrompt").style.display = "none";
+          window.location.reload();
+        }
       }
-    </style>
-    <script type="module" crossorigin src="./assets/index-BQO0U0XJ.js"></script>
+    </script>
+    <script type="module" crossorigin src="./assets/index-Df_PmBcx.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-YUH8MbHG.css">
   </head>
-  <body></body>
+  <body>
+    <div id="userIdPrompt">
+      <h3>Please enter your user ID:</h3>
+      <input type="number" id="userIdInput" min="0" max="28" />
+      <button onclick="submitUserId()">Submit</button>
+    </div>
+  </body>
 </html>
