@@ -114,7 +114,7 @@ const setupIslandLight = (
   const directionalLight = new THREE.DirectionalLight(color, intensity);
   scene.add(directionalLight);
 
-  console.log(position);
+  // console.log(position);
   directionalLight.position.set(
     position.x + 10,
     position.y + 20,
@@ -149,6 +149,70 @@ const setupIslandLight = (
 
   return directionalLight;
 };
+
+// Add this class before the Scene class
+class RainEffect {
+  constructor(
+    scene,
+    center = { x: 0, y: 0, z: 0 },
+    radius = 30,
+    dropCount = 1500
+  ) {
+    this.scene = scene;
+    this.center = center;
+    this.radius = radius;
+    this.dropCount = dropCount;
+    this.raindrops = new THREE.Group();
+    this.createRain();
+  }
+
+  createRain() {
+    // Create raindrop geometry and material
+    const rainGeometry = new THREE.BufferGeometry();
+    const rainMaterial = new THREE.PointsMaterial({
+      color: 0xaaaaaa,
+      size: 0.3,
+      transparent: true,
+      opacity: 0.7,
+    });
+
+    // Create vertices for raindrops
+    const vertices = [];
+    for (let i = 0; i < this.dropCount; i++) {
+      // Random position within a cylinder
+      const theta = Math.random() * Math.PI * 2;
+      const r = Math.random() * this.radius;
+      const x = this.center.x + r * Math.cos(theta);
+      const y = this.center.y + Math.random() * 80; // Height range
+      const z = this.center.z + r * Math.sin(theta);
+
+      vertices.push(x, y, z);
+    }
+
+    rainGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+    this.raindrops = new THREE.Points(rainGeometry, rainMaterial);
+    // this.scene.add(this.raindrops);
+  }
+
+  animate() {
+    const positions = this.raindrops.geometry.attributes.position.array;
+
+    for (let i = 0; i < positions.length; i += 3) {
+      // Move raindrop down
+      positions[i + 1] -= 0.3; // Speed of fall
+
+      // Reset raindrop to top when it falls below threshold
+      if (positions[i + 1] < this.center.y - 40) {
+        positions[i + 1] = this.center.y + 40;
+      }
+    }
+
+    this.raindrops.geometry.attributes.position.needsUpdate = true;
+  }
+}
 
 class Scene {
   constructor(params) {
@@ -303,7 +367,7 @@ class Scene {
     this.initRenderer();
     this.initControls();
     this.initLights();
-    // this.initClickHandler();
+    this.initClickHandler();
   }
 
   initClickHandler() {
@@ -436,11 +500,26 @@ class Island {
       herbs: 2,
       fadeStartDistance: 100,
       fadeEndDistance: 700,
-      items: [], // Add this to store related items
+      items: [],
       lightColor: "#ffb157",
       lightIntensity: 1.5,
+      enableLightning: false,
       ...params,
     };
+
+    // Add lightning light
+    if (this.params.enableLightning) {
+      this.lightningLight = new THREE.PointLight("#72b4ff", 10, 100, 0);
+      this.lightningLight.position.set(
+        this.params.x,
+        this.params.y + 10,
+        this.params.z
+      );
+      scene.add(this.lightningLight);
+
+      // Start lightning animation
+      this.animateLightning();
+    }
 
     setupIslandLight(
       scene,
@@ -508,6 +587,44 @@ class Island {
       requestAnimationFrame(animate);
     };
     animate();
+  }
+
+  animateLightning() {
+    const createLightningFlash = () => {
+      // Random delay between flashes (3-15 seconds)
+      const delay = Math.random() * 12000 + 3000;
+
+      setTimeout(() => {
+        // Create a sequence of flashes
+        const flashSequence = () => {
+          const flashes = Math.floor(Math.random() * 3) + 1; // 1-3 flashes
+          let flashCount = 0;
+
+          const flash = () => {
+            // Random intensity for each flash
+            this.lightningLight.intensity = Math.random() * 5 + 5;
+
+            // Quick decay of the flash
+            setTimeout(() => {
+              this.lightningLight.intensity = 0;
+              flashCount++;
+
+              // Continue sequence if more flashes remain
+              if (flashCount < flashes) {
+                setTimeout(flash, Math.random() * 100);
+              }
+            }, 50);
+          };
+
+          flash();
+        };
+
+        flashSequence();
+        createLightningFlash(); // Schedule next lightning
+      }, delay);
+    };
+
+    createLightningFlash(); // Start the first lightning
   }
 
   addItem(item) {
@@ -1248,6 +1365,17 @@ const buildIsland_2 = () => {
     groundColor: 0xffffff,
   });
   island2.addItem(ground.createGroundGeometry());
+
+  // Add signpost
+  const signpost = new SignPost(scene.scene, {
+    x: 0,
+    y: -3,
+    z: 20,
+    rotation: 0,
+    text: "Well done you've\nmade it over here.\n\nNow go away.",
+  });
+  signpost.init();
+  island2.addItem(signpost.signpost);
 };
 
 // Island 3
@@ -1269,11 +1397,68 @@ const buildIsland_3 = () => {
     groundColor: "#ffc582",
   });
   island3.addItem(ground.createGroundGeometry());
+
+  // Add signpost
+  const signpost = new SignPost(scene.scene, {
+    x: -5,
+    y: -3,
+    z: 20,
+    rotation: -0.4,
+    text: "You're very far from\nwhere you should be.\n\nI said go away!",
+  });
+  signpost.init();
+  island3.addItem(signpost.signpost);
+};
+
+// Island 4
+const buildIsland_4 = () => {
+  const island4 = new Island(scene.scene, scene.camera, {
+    x: 100,
+    y: 100,
+    z: -400,
+    herbs: 100,
+    lightColor: "#33c5e6",
+    lightIntensity: 0.6,
+    enableLightning: true,
+  });
+
+  island4.init();
+
+  const ground = new GroundSurface({
+    x: island4.params.x,
+    y: island4.params.y,
+    z: island4.params.z,
+    groundColor: 0x9ee6f7,
+  });
+  island4.addItem(ground.createGroundGeometry());
+
+  // Add signpost
+  const signpost = new SignPost(scene.scene, {
+    x: 0,
+    y: -3,
+    z: 20,
+    rotation: 0.3,
+    text: "Welcome to Island 4!\nNot much to see here...\n\nYet.",
+  });
+  signpost.init();
+  island4.addItem(signpost.signpost);
+
+  // Add rain effect
+  const rain = new RainEffect(scene.scene);
+  island4.addItem(rain.raindrops);
+
+  // Add rain animation to the render loop
+  const originalRender = scene.render.bind(scene);
+  scene.render = function () {
+    rain.animate();
+    originalRender();
+  };
 };
 
 buildIsland_1();
 buildIsland_2();
 buildIsland_3();
+buildIsland_4();
 
 // Resize
 window.addEventListener("resize", () => {
