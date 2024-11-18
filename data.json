@@ -265,7 +265,7 @@
     "partnerName": "Zena",
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Rietspruit",
     "dietary": "No fish"
   },
