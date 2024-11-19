@@ -288,5 +288,25 @@
     "confirmed": false,
     "accom": "Bergendal",
     "dietary": "None"
+  },
+  {
+    "id": 29,
+    "name": "Kerryn",
+    "partnerName": null,
+    "family": false,
+    "kidNames": ["Addison"],
+    "confirmed": false,
+    "accom": "Rietspruit",
+    "dietary": "None"
+  },
+  {
+    "id": 30,
+    "name": "Andrea",
+    "partnerName": "Nick",
+    "family": false,
+    "kidNames": [],
+    "confirmed": false,
+    "accom": "Rietspruit",
+    "dietary": "None"
   }
 ]
