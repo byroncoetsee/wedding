@@ -115,7 +115,7 @@
     "partnerName": "Chantal",
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Faraway Estate, Main Room 2",
     "dietary": "None"
   },
@@ -135,7 +135,7 @@
     "partnerName": null,
     "family": true,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Courtyard Room 2, Faraway Estate",
     "dietary": "None"
   },
@@ -155,7 +155,7 @@
     "partnerName": "Jurie",
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Lavender Cottage, Pendennis",
     "dietary": "None"
   },
@@ -195,7 +195,7 @@
     "partnerName": "Kate",
     "family": false,
     "kidNames": ["Theo", "Baby"],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Courtyard Cottage 2, Faraway Estate",
     "dietary": "None"
   },
@@ -205,7 +205,7 @@
     "partnerName": "Tam",
     "family": false,
     "kidNames": ["Hunter", "Sienna"],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Faraway Estate, Loft Room",
     "dietary": "None"
   },
@@ -215,7 +215,7 @@
     "partnerName": "Cait",
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "De Villiers",
     "dietary": "None"
   },
@@ -235,7 +235,7 @@
     "partnerName": "Dani",
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Rietspruit",
     "dietary": "None, Vegetarian"
   },
@@ -255,7 +255,7 @@
     "partnerName": "Pauline",
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Rietspruit",
     "dietary": "None"
   },
@@ -287,6 +287,46 @@
     "kidNames": ["Neil"],
     "confirmed": false,
     "accom": "Bergendal",
+    "dietary": "None"
+  },
+  {
+    "id": 29,
+    "name": "Kerryn",
+    "partnerName": null,
+    "family": false,
+    "kidNames": ["Addison"],
+    "confirmed": true,
+    "accom": "Rietspruit",
+    "dietary": "None"
+  },
+  {
+    "id": 30,
+    "name": "Andrea",
+    "partnerName": "Nick",
+    "family": false,
+    "kidNames": [],
+    "confirmed": false,
+    "accom": "Rietspruit",
+    "dietary": "None"
+  },
+  {
+    "id": 31,
+    "name": "Zak",
+    "partnerName": null,
+    "family": false,
+    "kidNames": [],
+    "confirmed": true,
+    "accom": "Rietspruit",
+    "dietary": "None"
+  },
+  {
+    "id": 32,
+    "name": "Daniel",
+    "partnerName": null,
+    "family": true,
+    "kidNames": [],
+    "confirmed": false,
+    "accom": "Rietspruit",
     "dietary": "None"
   }
 ]

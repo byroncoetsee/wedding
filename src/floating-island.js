@@ -3,11 +3,56 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import Stats from "three/examples/jsm/libs/stats.module";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+import { sendTelegramMessage } from "./telegram.js";
 
 var container = { width: window.innerWidth, height: window.innerHeight };
 const startCamDistanceMultiplier = 2;
 const landScale = 1;
 let currentUser = null;
+
+// Add this at the start of the file, after imports
+const DEBUG = true;
+
+// Add this function near the top
+const debugLog = (message) => {
+  if (!DEBUG) return;
+
+  // Create or get debug console
+  let debugConsole = document.getElementById("debug-console");
+  if (!debugConsole) {
+    debugConsole = document.createElement("div");
+    debugConsole.id = "debug-console";
+    debugConsole.style.cssText = `
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            max-height: 150px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-y: auto;
+            z-index: 1000;
+        `;
+    document.body.appendChild(debugConsole);
+  }
+
+  // Add new message
+  const msgElement = document.createElement("div");
+  msgElement.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+  debugConsole.appendChild(msgElement);
+
+  // Keep only last 10 messages
+  while (debugConsole.children.length > 10) {
+    debugConsole.removeChild(debugConsole.firstChild);
+  }
+
+  // Scroll to bottom
+  debugConsole.scrollTop = debugConsole.scrollHeight;
+};
 
 // Rotate arms / legs
 const degreesToRadians = (degrees) => {
@@ -328,7 +373,8 @@ class Scene {
       <div>• Click and drag to rotate view</div>
       <div>• Scroll to zoom in/out</div>
       <div>• Press space bar to toggle auto rotation</div>
-      <!-- <div>• Click on islands to navigate</div> -->
+      <div>• Click on islands to travel between them</div>
+      <div>• Click on (some) signposts to interact</div>
     `;
 
     document.body.appendChild(legend);
@@ -440,44 +486,34 @@ class Scene {
 
   init() {
     this.initStats();
-    this.initLegend();
+    // this.initLegend();
     this.initScene();
     this.initCamera();
     this.initRenderer();
     this.initControls();
     this.initLights();
-    // this.initClickHandler();
+    this.initClickHandler();
   }
 
   initClickHandler() {
     this.cameraController = new CameraController(this.camera, this.controls);
-
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let isDragging = false;
-    let mouseDownTime = 0;
+    let startPosition = { x: 0, y: 0 };
 
-    // Add mousedown and mouseup listeners to detect dragging
-    window.addEventListener("mousedown", () => {
-      isDragging = false;
-      mouseDownTime = performance.now();
-    });
+    const handleClick = (event) => {
+      // Get click coordinates
+      const x = event.clientX || (event.touches && event.touches[0].clientX);
+      const y = event.clientY || (event.touches && event.touches[0].clientY);
 
-    window.addEventListener("mousemove", () => {
-      if (mouseDownTime && performance.now() - mouseDownTime > 100) {
-        isDragging = true;
-      }
-    });
-
-    window.addEventListener("click", (event) => {
-      // Skip if we were dragging
-      if (isDragging) return;
-
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      // Convert to normalized device coordinates
+      mouse.x = (x / window.innerWidth) * 2 - 1;
+      mouse.y = -(y / window.innerHeight) * 2 + 1;
 
       raycaster.setFromCamera(mouse, this.camera);
 
+      // Find all meshes in the scene
       const meshes = [];
       this.scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -488,7 +524,16 @@ class Scene {
       const intersects = raycaster.intersectObjects(meshes);
 
       if (intersects.length > 0) {
-        let current = intersects[0].object;
+        const clickedObject = intersects[0].object;
+
+        // Handle signpost clicks
+        if (clickedObject.userData.onClick) {
+          clickedObject.userData.onClick();
+          return;
+        }
+
+        // Handle island navigation
+        let current = clickedObject;
         while (current.parent && !current.__islandInstance) {
           current = current.parent;
         }
@@ -500,7 +545,48 @@ class Scene {
           this.cameraController.moveTo(current.position);
         }
       }
-    });
+    };
+
+    const handleDragStart = (event) => {
+      isDragging = false;
+      startPosition = {
+        x: event.clientX || (event.touches && event.touches[0].clientX),
+        y: event.clientY || (event.touches && event.touches[0].clientY),
+      };
+    };
+
+    const handleDragMove = (event) => {
+      if (!startPosition) return;
+
+      const currentX =
+        event.clientX || (event.touches && event.touches[0].clientX);
+      const currentY =
+        event.clientY || (event.touches && event.touches[0].clientY);
+
+      if (
+        Math.abs(currentX - startPosition.x) > 10 ||
+        Math.abs(currentY - startPosition.y) > 10
+      ) {
+        isDragging = true;
+      }
+    };
+
+    const handleDragEnd = (event) => {
+      if (!isDragging) {
+        handleClick(event);
+      }
+      startPosition = null;
+    };
+
+    const canvas = this.renderer.domElement;
+
+    canvas.addEventListener("mousedown", handleDragStart);
+    canvas.addEventListener("mousemove", handleDragMove);
+    canvas.addEventListener("mouseup", handleDragEnd);
+
+    canvas.addEventListener("touchstart", handleDragStart, { passive: true });
+    canvas.addEventListener("touchmove", handleDragMove, { passive: true });
+    canvas.addEventListener("touchend", handleDragEnd);
   }
 }
 
@@ -1231,10 +1317,12 @@ class SignPost {
       x: 0,
       y: 0,
       z: 0,
-      rotation: 0, // Added rotation parameter in radians
+      rotation: 0,
       text: "Sign text here",
-      width: 7, // Default width
-      height: 3.4, // Default height
+      width: 7,
+      height: 3.4,
+      onClick: null,
+      identifier: null,
       ...params,
     };
 
@@ -1332,12 +1420,357 @@ class SignPost {
     this.signpost.add(post2);
     this.signpost.add(sign);
 
+    // Add identifier to the sign mesh
+    sign.userData.identifier = this.params.identifier;
+    sign.userData.onClick = this.params.onClick;
+
     shadowSupport(this.signpost);
   }
 
   init() {
     this.drawPost();
     shadowSupport(this.signpost);
+  }
+}
+
+class Sheep {
+  constructor(scene, params = {}) {
+    this.scene = scene;
+    this.params = {
+      x: params.x || 0,
+      y: params.y || 0,
+      z: params.z || 0,
+      scale: params.scale || 1, // Reset back to 1
+      rotation: params.rotation || 0,
+      woolColor: params.woolColor || 0xf3f2f7,
+      skinColor: params.skinColor || 0x5a6e6c,
+    };
+
+    this.sheep = new THREE.Group();
+    this.eyeballs = [];
+    this.eyes = [];
+  }
+
+  drawSheep() {
+    const mat_wool = new THREE.MeshLambertMaterial({
+      color: this.params.woolColor,
+    });
+    const mat_skin = new THREE.MeshLambertMaterial({
+      color: this.params.skinColor,
+    });
+
+    // Head
+    const geo_head = new THREE.IcosahedronGeometry(1.2, 0); // Increased from 1 to 1.2
+    const head = new THREE.Mesh(geo_head, mat_skin);
+    head.scale.z = 0.6;
+    head.scale.y = 1.1;
+    head.position.y = 2.5;
+    head.rotation.x = -0.2;
+    head.castShadow = true;
+    this.sheep.add(head);
+
+    // Body
+    const geo_body = new THREE.IcosahedronGeometry(4, 0); // Increased from 3.5 to 4
+    const body = new THREE.Mesh(geo_body, mat_wool);
+    body.position.set(0, head.position.y, -2.2);
+    body.scale.set(0.5, 0.5, 0.6);
+    body.rotation.set(0, 0, Math.PI / 3);
+    body.castShadow = true;
+    this.sheep.add(body);
+
+    // Tail
+    const geo_tail = new THREE.IcosahedronGeometry(0.6, 0); // Increased from 0.5 to 0.6
+    const tail = new THREE.Mesh(geo_tail, mat_wool);
+    tail.position.set(head.position.x, head.position.y + 1.2, -3.8);
+    tail.castShadow = true;
+    this.sheep.add(tail);
+
+    // Hair/Wool tufts
+    const geo_hair = new THREE.IcosahedronGeometry(0.5, 0); // Increased from 0.4 to 0.5
+    const hairPositions = [
+      { x: -0.4, y: 0.9, z: -0.1, scale: 0.6 },
+      { x: 0, y: 1, z: -0.1, scale: 1 },
+      { x: 0.4, y: 0.9, z: -0.1, scale: 0.8 },
+      { x: -0.1, y: 0.9, z: -0.4, scale: 0.7 },
+      { x: 0.12, y: 0.9, z: -0.4, scale: 0.6 },
+    ];
+
+    hairPositions.forEach((pos) => {
+      const hair = new THREE.Mesh(geo_hair, mat_wool);
+      hair.position.set(pos.x, head.position.y + pos.y, pos.z);
+      hair.rotation.set(
+        Math.PI / 12,
+        pos.x === 0 ? Math.PI / 6 : 0,
+        Math.PI / 3
+      );
+      hair.scale.set(pos.scale, pos.scale, pos.scale);
+      hair.castShadow = true;
+      this.sheep.add(hair);
+    });
+
+    // Legs
+    const geo_leg = new THREE.CylinderGeometry(0.18, 0.12, 1.2, 5); // Increased width and height
+    const legPositions = [
+      { x: 0.5, y: 1.1, z: -1.5 },
+      { x: -0.5, y: 1.1, z: -1.5 },
+      { x: 0.8, y: 1.1, z: -3 },
+      { x: -0.8, y: 1.1, z: -3 },
+    ];
+
+    legPositions.forEach((pos) => {
+      const leg = new THREE.Mesh(geo_leg, mat_skin);
+      leg.position.set(pos.x, pos.y, pos.z);
+      leg.castShadow = true;
+      leg.receiveShadow = true;
+      this.sheep.add(leg);
+
+      // Add feet
+      const geo_foot = new THREE.DodecahedronGeometry(0.24, 0); // Increased from 0.2 to 0.24
+      const foot = new THREE.Mesh(geo_foot, mat_skin);
+      foot.scale.set(1, 0.8, 1);
+      foot.position.set(pos.x, pos.y - 0.5, pos.z + 0.09);
+      foot.castShadow = true;
+      foot.receiveShadow = true;
+      this.sheep.add(foot);
+    });
+
+    // Eyes
+    const geo_eye = new THREE.CylinderGeometry(0.35, 0.25, 0.05, 8); // Increased from 0.3/0.2 to 0.35/0.25
+    [-0.3, 0.3].forEach((x) => {
+      const eye = new THREE.Mesh(geo_eye, mat_wool);
+      eye.position.set(x, head.position.y + 0.1, 0.6);
+      eye.rotation.set(
+        Math.PI / 2 - Math.PI / 15,
+        0,
+        x < 0 ? Math.PI / 15 : -Math.PI / 15
+      );
+      eye.castShadow = true;
+      this.eyes.push(eye);
+      this.sheep.add(eye);
+
+      // Eyeballs
+      const geo_eyeball = new THREE.SphereGeometry(0.2, 8.1, 8.1); // Increased from 0.11 to 0.13
+      const eyeball = new THREE.Mesh(geo_eyeball, mat_skin);
+      eyeball.position.set(x, head.position.y + 0.1, 0.52);
+      eyeball.castShadow = true;
+      this.eyeballs.push(eyeball);
+      this.sheep.add(eyeball);
+    });
+
+    // Position and rotate the sheep
+    this.sheep.position.set(this.params.x, this.params.y, this.params.z);
+    this.sheep.rotation.y = this.params.rotation;
+    this.sheep.scale.set(
+      this.params.scale,
+      this.params.scale,
+      this.params.scale
+    );
+  }
+
+  init() {
+    this.drawSheep();
+    shadowSupport(this.sheep);
+  }
+}
+
+// Tree class for creating decorative trees
+class Tree {
+  constructor(scene, params = {}) {
+    this.scene = scene;
+    this.params = {
+      x: params.x || 0,
+      y: params.y || 0,
+      z: params.z || 0,
+      scale: params.scale || 1,
+      rotation: params.rotation || Math.random() * Math.PI * 2,
+      trunkColor: params.trunkColor || 0xf3f2f7,
+      crownColor: params.crownColor || 0xfeb42b,
+    };
+
+    this.treeGroup = new THREE.Group();
+    this.mat_trunk = new THREE.MeshLambertMaterial({
+      color: this.params.trunkColor,
+    });
+    this.mat_crown = new THREE.MeshLambertMaterial({
+      color: this.params.crownColor,
+    });
+  }
+
+  createSingleTree(scale = 1, rotation = 0, position = { x: 0, y: 0, z: 0 }) {
+    const tree = new THREE.Group();
+
+    // Trunk
+    const geo_trunk = new THREE.IcosahedronGeometry(9, 0);
+    const trunk = new THREE.Mesh(geo_trunk, this.mat_trunk);
+    trunk.rotation.x = Math.PI / 2;
+    trunk.position.y = 5;
+    trunk.scale.set(0.03, 0.03, 1);
+    trunk.castShadow = true;
+    trunk.receiveShadow = true;
+    tree.add(trunk);
+
+    // Crown
+    const geo_crown = new THREE.IcosahedronGeometry(2.5, 0);
+    const crown = new THREE.Mesh(geo_crown, this.mat_crown);
+    crown.scale.y = 0.4;
+    crown.rotation.z = -0.5;
+    crown.rotation.x = -0.2;
+    crown.position.set(trunk.position.x, 12, trunk.position.z);
+    crown.castShadow = true;
+    tree.add(crown);
+
+    // Leaf
+    const leaf = new THREE.Group();
+    const mainStem = new THREE.Mesh(geo_trunk, this.mat_trunk);
+    mainStem.scale.set(0.007, 0.007, 0.16);
+    mainStem.rotation.x = Math.PI / 2;
+    mainStem.castShadow = true;
+    leaf.add(mainStem);
+
+    const geo_blade = new THREE.CylinderGeometry(0.7, 0.7, 0.05, 12);
+    const blade = new THREE.Mesh(geo_blade, this.mat_crown);
+    blade.rotation.z = Math.PI / 2;
+    blade.scale.x = 1.2;
+    blade.position.set(-0.05, 0.4, 0);
+    blade.castShadow = true;
+    leaf.add(blade);
+
+    // Sub stems
+    const subStems = [];
+    for (let i = 0; i < 8; i++) {
+      subStems[i] = mainStem.clone();
+      subStems[i].scale.set(0.0055, 0.0055, 0.01);
+      subStems[i].castShadow = true;
+      leaf.add(subStems[i]);
+    }
+
+    subStems[0].rotation.x = -Math.PI / 4;
+    subStems[0].scale.z = 0.04;
+    subStems[0].position.set(0, 0.8, 0.2);
+
+    subStems[2].rotation.x = -Math.PI / 6;
+    subStems[2].scale.z = 0.05;
+    subStems[2].position.set(0, 0.5, 0.25);
+
+    subStems[4].rotation.x = -Math.PI / 8;
+    subStems[4].scale.z = 0.055;
+    subStems[4].position.set(0, 0.2, 0.3);
+
+    subStems[6].rotation.x = -Math.PI / 10;
+    subStems[6].scale.z = 0.045;
+    subStems[6].position.set(0, -0.1, 0.26);
+
+    for (let i = 1; i < 8; i += 2) {
+      subStems[i].rotation.x = -subStems[i - 1].rotation.x;
+      subStems[i].scale.z = subStems[i - 1].scale.z;
+      subStems[i].position.set(
+        0,
+        subStems[i - 1].position.y,
+        -subStems[i - 1].position.z
+      );
+    }
+
+    leaf.rotation.x = Math.PI / 3;
+    leaf.rotation.z = 0.2;
+    leaf.position.set(trunk.position.x - 0.2, 5, trunk.position.z + 1);
+    tree.add(leaf);
+
+    const leaf_1 = leaf.clone();
+    leaf_1.rotation.x = -Math.PI / 3;
+    leaf_1.position.set(trunk.position.x - 0.2, 6, trunk.position.z - 1);
+    tree.add(leaf_1);
+
+    tree.position.set(position.x, position.y, position.z);
+    tree.rotation.y = rotation;
+    tree.scale.set(scale, scale, scale);
+
+    return tree;
+  }
+
+  drawTrees() {
+    // Create three trees with different scales, rotations and positions
+    const tree1 = this.createSingleTree(1.2, Math.PI / 6, {
+      x: -2,
+      y: 0,
+      z: 0,
+    });
+    const tree2 = this.createSingleTree(0.8, Math.PI / 3, {
+      x: 2,
+      y: 0,
+      z: -1,
+    });
+    const tree3 = this.createSingleTree(1.0, -Math.PI / 4, {
+      x: 0,
+      y: 0,
+      z: 2,
+    });
+
+    this.treeGroup.add(tree1);
+    this.treeGroup.add(tree2);
+    this.treeGroup.add(tree3);
+
+    // Position and rotate the entire group
+    this.treeGroup.position.set(this.params.x, this.params.y, this.params.z);
+    this.treeGroup.rotation.y = this.params.rotation;
+    this.treeGroup.scale.set(
+      this.params.scale,
+      this.params.scale,
+      this.params.scale
+    );
+  }
+
+  init() {
+    this.drawTrees();
+    shadowSupport(this.treeGroup);
+  }
+}
+
+class HugeText {
+  constructor(scene, params = {}) {
+    this.scene = scene;
+    this.params = {
+      text: params.text || "TEXT",
+      x: params.x || 0,
+      y: params.y || 0,
+      z: params.z || 0,
+      size: params.size || 5,
+      color: params.color || 0xffffff,
+      rotation: params.rotation || 0,
+    };
+    this.textGroup = new THREE.Group();
+  }
+
+  init() {
+    const loader = new FontLoader();
+    loader.load("./lucky-guy.json", (font) => {
+      const textGeometry = new TextGeometry(this.params.text, {
+        font: font,
+        size: this.params.size,
+        depth: this.params.size * 0.3, // Increased depth for taller text
+        curveSegments: 12,
+        bevelEnabled: false,
+      });
+
+      textGeometry.computeBoundingBox();
+      const textWidth =
+        textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+
+      const textMaterial = new THREE.MeshPhongMaterial({
+        color: this.params.color,
+        flatShading: true,
+      });
+
+      const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+      textMesh.position.x = this.params.x - textWidth / 2;
+      textMesh.position.y = this.params.y;
+      textMesh.position.z = this.params.z;
+      textMesh.rotation.y = this.params.rotation;
+      textMesh.scale.y = 2; // Scale vertically to make text taller
+
+      this.textGroup.add(textMesh);
+
+      shadowSupport(this.textGroup);
+    });
   }
 }
 
@@ -1366,31 +1799,6 @@ const buildIsland_1 = () => {
     z: island.params.z,
   });
   island.addItem(ground.createGroundGeometry());
-
-  // Byron
-  const bblock = new Bblock(scene.scene, {
-    x: 0,
-    y: -2,
-    z: 0,
-    hairColor: 0xed4928,
-    bun: false,
-    lookAngle: 55,
-  });
-  bblock.init();
-  island.addItem(bblock.bblock);
-
-  // Jen
-  const bblockJen = new Bblock(scene.scene, {
-    x: 5,
-    y: -2,
-    z: 0,
-    hairColor: 0x5e3014,
-    bun: true,
-    hairDown: true,
-    lookAngle: -55,
-  });
-  bblockJen.init();
-  island.addItem(bblockJen.bblock);
 
   // Welcome Signpost
   const signpost = new SignPost(scene.scene, {
@@ -1461,16 +1869,74 @@ const buildIsland_2 = () => {
   });
   island2.addItem(ground.createGroundGeometry());
 
-  // Add signpost
-  const signpost = new SignPost(scene.scene, {
+  // Add "Yes" signpost
+  const signpostYes = new SignPost(scene.scene, {
+    x: -15,
+    y: -3,
+    z: 6,
+    rotation: -0.5,
+    text: "\n\nI'll be there!",
+    identifier: "rsvp-yes",
+    onClick: () => {
+      alert(`See you there, ${currentUser.name}!`);
+      sendTelegramMessage(`${currentUser.name} RSVP: Yes`);
+    },
+  });
+  signpostYes.init();
+  island2.addItem(signpostYes.signpost);
+
+  // Add "No" signpost
+  const signpostNo = new SignPost(scene.scene, {
     x: 0,
     y: -3,
-    z: 20,
-    rotation: 0,
-    text: "Well done you've\nmade it over here.\n\nNow go away.",
+    z: 18,
+    rotation: -0.8,
+    text: "\n\nGot better things\nto do tbh",
+    identifier: "rsvp-no",
+    onClick: () => {
+      alert(`Cheaper for us, ${currentUser.name}.`);
+      sendTelegramMessage(`${currentUser.name} RSVP: No`);
+    },
   });
-  signpost.init();
-  island2.addItem(signpost.signpost);
+  signpostNo.init();
+  island2.addItem(signpostNo.signpost);
+
+  // Huge Text
+  const hugeText = new HugeText(scene.scene, {
+    x: 12,
+    y: -4,
+    z: -23,
+    rotation: -0.6,
+    size: 12,
+    text: "RSVP",
+  });
+  hugeText.init();
+  island2.addItem(hugeText.textGroup);
+
+  // Byron
+  const bblock = new Bblock(scene.scene, {
+    x: 0,
+    y: -2,
+    z: 0,
+    hairColor: 0xed4928,
+    bun: false,
+    lookAngle: 55,
+  });
+  bblock.init();
+  island2.addItem(bblock.bblock);
+
+  // Jen
+  const bblockJen = new Bblock(scene.scene, {
+    x: 5,
+    y: -2,
+    z: 0,
+    hairColor: 0x5e3014,
+    bun: true,
+    hairDown: true,
+    lookAngle: -55,
+  });
+  bblockJen.init();
+  island2.addItem(bblockJen.bblock);
 };
 
 // Island 3
@@ -1479,7 +1945,7 @@ const buildIsland_3 = () => {
     x: 150,
     y: 70,
     z: -120,
-    herbs: 10,
+    herbs: 1,
     lightColor: "#ffd599",
     lightIntensity: 0.5,
   });
@@ -1493,7 +1959,7 @@ const buildIsland_3 = () => {
   });
   island3.addItem(ground.createGroundGeometry());
 
-  // Add signpost
+  // Add signpost with click handler
   const signpost = new SignPost(scene.scene, {
     x: -5,
     y: -3,
@@ -1503,6 +1969,44 @@ const buildIsland_3 = () => {
   });
   signpost.init();
   island3.addItem(signpost.signpost);
+
+  // Add sheep
+  const sheep = new Sheep(scene.scene, {
+    x: -5,
+    y: -3,
+    z: 5,
+  });
+  sheep.init();
+  island3.addItem(sheep.sheep);
+
+  // Add sheep
+  const sheep2 = new Sheep(scene.scene, {
+    x: -7,
+    y: -3,
+    z: 12,
+    rotation: 2,
+  });
+  sheep2.init();
+  island3.addItem(sheep2.sheep);
+
+  // Add sheep
+  const sheep3 = new Sheep(scene.scene, {
+    x: 5,
+    y: -3,
+    z: 10,
+    rotation: -0.5,
+  });
+  sheep3.init();
+  island3.addItem(sheep3.sheep);
+
+  // Tree
+  const tree = new Tree(scene.scene, {
+    x: 10,
+    y: -3,
+    z: 0,
+  });
+  tree.init();
+  island3.addItem(tree.treeGroup);
 };
 
 // Island 4
@@ -1559,8 +2063,8 @@ initUser()
       buildIsland_4();
     }
   })
-  .catch(() => {
-    console.error("Failed to initialize user");
+  .catch((e) => {
+    console.error("Error starting app: " + e);
   });
 
 // Resize
