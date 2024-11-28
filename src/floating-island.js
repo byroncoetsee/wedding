@@ -29,8 +29,18 @@ const BASE_POSITIONS = {
   rsvp: { x: 35, y: 30, z: -200 },
   food: { x: 150, y: 10, z: -120 },
   stay: { x: -100, y: -40, z: -250 },
+  venue: { x: 200, y: 10, z: -0 },
   no: { x: 0, y: 0, z: 0 },
 };
+
+// const BASE_POSITIONS = {
+//   main: { x: 0, y: 0, z: 0 },
+//   venue: { x: 50, y: 10, z: -100 },
+//   stay: { x: -20, y: -20, z: -250 },
+//   rsvp: { x: 10, y: 30, z: -450 },
+//   food: { x: -90, y: 40, z: -600 },
+//   no: { x: 0, y: 0, z: 0 },
+// };
 
 const ISLAND_POSITIONS = Object.entries(BASE_POSITIONS).reduce(
   (acc, [key, pos]) => {
@@ -2082,7 +2092,7 @@ const buildIsland_4 = () => {
     x: pos.island.x,
     y: pos.island.y,
     z: pos.island.z,
-    herbs: 10,
+    herbs: 100,
     lightColor: "#e633d4",
     lightIntensity: 0.8,
   });
@@ -2153,6 +2163,76 @@ const buildIsland_4 = () => {
   island4.addItem(signpostPrice.signpost);
 };
 
+// VENUE
+const buildVenueIsland = () => {
+  const pos = ISLAND_POSITIONS.venue;
+  const venueIsland = new Island(scene.scene, scene.camera, {
+    x: pos.island.x,
+    y: pos.island.y,
+    z: pos.island.z,
+    herbs: 15, // More herbs for grass
+    lightColor: "#90EE90", // Light green
+    lightIntensity: 2.0,
+  });
+  venueIsland.init();
+
+  // Green ground
+  const ground = new GroundSurface({
+    x: venueIsland.params.x,
+    y: venueIsland.params.y,
+    z: venueIsland.params.z,
+    groundColor: 0x90ee90, // Light green
+  });
+  venueIsland.addItem(ground.createGroundGeometry());
+
+  // huge text
+  const hugeText = new HugeText(scene.scene, {
+    x: 35,
+    y: -4,
+    z: -27,
+    rotation: -1.5,
+    size: 12,
+    text: "VENUE",
+  });
+  hugeText.init();
+  venueIsland.addItem(hugeText.textGroup);
+
+  // Add some trees
+  for (let i = 0; i < 5; i++) {
+    const tree = new Tree(scene.scene, {
+      x: -10 + Math.random() * 20,
+      y: -3,
+      z: -10 + Math.random() * 20,
+      scale: 0.8 + Math.random() * 0.4,
+    });
+    tree.init();
+    venueIsland.addItem(tree.treeGroup);
+  }
+
+  // Add some sheep
+  for (let i = 0; i < 3; i++) {
+    const sheep = new Sheep(scene.scene, {
+      x: -8 + Math.random() * 16,
+      y: -3,
+      z: -8 + Math.random() * 16,
+      scale: 0.6,
+    });
+    sheep.init();
+    venueIsland.addItem(sheep.sheep);
+  }
+
+  // Add venue sign
+  const venueSign = new SignPost(scene.scene, {
+    x: 0,
+    y: -3,
+    z: 0,
+    rotation: 0,
+    text: "\nThis is where\nthe jol is",
+  });
+  venueSign.init();
+  venueIsland.addItem(venueSign.signpost);
+};
+
 initUser()
   .then(() => {
     if (currentUser) {
@@ -2165,6 +2245,7 @@ initUser()
         buildIsland_2();
         buildIsland_3();
         buildIsland_4();
+        buildVenueIsland();
       }
     }
   })

@@ -68,10 +68,11 @@ body {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 1000;
+  overflow-y: auto;
 }
 
 .popup-content {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -82,6 +83,8 @@ body {
   max-width: 500px;
   width: 60%;
   font-family: "Helvetica Neue", Arial, sans-serif;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .close-button {
@@ -95,4 +98,29 @@ body {
 
 .close-button:hover {
   color: #333;
+}
+
+@media screen and (max-width: 768px) {
+  .popup-content {
+    width: 85%;
+    padding: 25px;
+    font-size: 0.9em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  .close-button {
+    top: 5px;
+    right: 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .popup-content {
+    width: 90%;
+    padding: 20px;
+    font-size: 0.85em;
+  }
 }
