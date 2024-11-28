@@ -4,149 +4,53 @@ import Stats from "three/examples/jsm/libs/stats.module";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { sendTelegramMessage } from "./telegram.js";
+import Cabin from "./cabin.js";
+import Cinema from "./cinema.js";
+import { get_accom_data, all_text } from "./text.js";
+
+import {
+  jitter,
+  shadowSupport,
+  noiseMap,
+  randomize,
+  degreesToRadians,
+  showPopup,
+  hidePopup,
+} from "./utils.js";
 
 var container = { width: window.innerWidth, height: window.innerHeight };
 const startCamDistanceMultiplier = 2;
 const landScale = 1;
 let currentUser = null;
 
-// Add this at the start of the file, after imports
-const DEBUG = true;
-
-// Add this function near the top
-const debugLog = (message) => {
-  if (!DEBUG) return;
-
-  // Create or get debug console
-  let debugConsole = document.getElementById("debug-console");
-  if (!debugConsole) {
-    debugConsole = document.createElement("div");
-    debugConsole.id = "debug-console";
-    debugConsole.style.cssText = `
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            max-height: 150px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            font-family: monospace;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-y: auto;
-            z-index: 1000;
-        `;
-    document.body.appendChild(debugConsole);
-  }
-
-  // Add new message
-  const msgElement = document.createElement("div");
-  msgElement.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
-  debugConsole.appendChild(msgElement);
-
-  // Keep only last 10 messages
-  while (debugConsole.children.length > 10) {
-    debugConsole.removeChild(debugConsole.firstChild);
-  }
-
-  // Scroll to bottom
-  debugConsole.scrollTop = debugConsole.scrollHeight;
+// Add this after the initial constants
+const ISLAND_POSITIONS = {
+  main: {
+    island: { x: 0, y: 0, z: 0 },
+    camera: { x: -25, y: 15, z: 35 },
+    lookAt: { x: 0, y: 0, z: 0 },
+  },
+  rsvp: {
+    island: { x: 35, y: 30, z: -200 },
+    camera: { x: 10, y: 45, z: -175 },
+    lookAt: { x: 35, y: 30, z: -200 },
+  },
+  food: {
+    island: { x: 150, y: 10, z: -120 },
+    camera: { x: 125, y: 25, z: -95 },
+    lookAt: { x: 150, y: 10, z: -120 },
+  },
+  stay: {
+    island: { x: -100, y: -40, z: -250 },
+    camera: { x: -115, y: -25, z: -195 },
+    lookAt: { x: -100, y: -40, z: -250 },
+  },
+  no: {
+    island: { x: 0, y: 0, z: 0 },
+    camera: { x: 0, y: 0, z: 5 },
+    lookAt: { x: 0, y: 0, z: 0 },
+  },
 };
-
-// Rotate arms / legs
-const degreesToRadians = (degrees) => {
-  return degrees * (Math.PI / 180);
-};
-
-// Add shadow support to object
-const shadowSupport = (group) => {
-  group.traverse((object) => {
-    if (object instanceof THREE.Mesh || object instanceof THREE.Group) {
-      object.castShadow = true;
-      object.receiveShadow = true;
-    }
-  });
-};
-
-// Get random number
-const randomize = (min, max, float = false) => {
-  const val = Math.random() * (max - min) + min;
-  if (float) {
-    return val;
-  }
-  return Math.floor(val);
-};
-
-// Random MORE VERTICES
-const map = (val, smin, smax, emin, emax) =>
-  ((emax - emin) * (val - smin)) / (smax - smin) + emin;
-
-// Update the jitter function to maintain connectivity
-const jitter = (geo, per) => {
-  const pos = geo.getAttribute("position");
-  const arr = pos.array;
-  const vertexCount = pos.count;
-
-  // Create an array to store the jitter values for each unique vertex
-  const jitterMap = new Map();
-
-  // First pass: calculate and store jitter for each unique vertex position
-  for (let i = 0; i < arr.length; i += 3) {
-    const key = `${Math.round(arr[i] * 100)},${Math.round(
-      arr[i + 1] * 100
-    )},${Math.round(arr[i + 2] * 100)}`;
-
-    if (!jitterMap.has(key)) {
-      jitterMap.set(key, {
-        x: map(Math.random(), 0, 1, -per, per),
-        y: map(Math.random(), 0, 1, -per, per),
-        z: map(Math.random(), 0, 1, -per, per),
-      });
-    }
-  }
-
-  // Second pass: apply the same jitter to shared vertices
-  for (let i = 0; i < arr.length; i += 3) {
-    const key = `${Math.round(arr[i] * 100)},${Math.round(
-      arr[i + 1] * 100
-    )},${Math.round(arr[i + 2] * 100)}`;
-    const jitterVal = jitterMap.get(key);
-
-    arr[i] += jitterVal.x; // x
-    arr[i + 1] += jitterVal.y; // y
-    arr[i + 2] += jitterVal.z; // z
-  }
-
-  pos.needsUpdate = true;
-  return geo;
-};
-
-function noiseMap(size = 256, intensity = 20, repeat = 30) {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d");
-
-  let imageData = ctx.createImageData(size, size);
-  let data = imageData.data;
-
-  for (let i = 0; i < size * size; i++) {
-    let noise = Math.random() * intensity;
-    let idx = i * 4;
-    data[idx] = noise; // R
-    data[idx + 1] = noise; // G
-    data[idx + 2] = noise; // B
-    data[idx + 3] = 255; // A
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(repeat, repeat);
-
-  return texture;
-}
 
 const setupIslandLight = (
   scene,
@@ -209,6 +113,7 @@ class User {
     this.confirmed = data.confirmed;
     this.accommodation = data.accom;
     this.dietaryRequirements = data.dietary;
+    this.rsvped = data.rsvped;
   }
 
   getTotalGuests() {
@@ -250,17 +155,36 @@ class User {
   isVIP() {
     return this.isFamily;
   }
+
+  setRSVP(rsvp) {
+    this.rsvped = true;
+    this.confirmed = rsvp;
+    const userData = JSON.parse(localStorage.getItem("currentUser"));
+    userData.rsvped = true;
+    userData.confirmed = rsvp;
+    localStorage.setItem("currentUser", JSON.stringify(userData));
+  }
 }
 
 const initUser = async () => {
   const userId = parseInt(localStorage.getItem("userId"));
+  const storedUser = localStorage.getItem("currentUser");
 
+  // If we have a stored user and the userId hasn't changed, use that
+  if (storedUser && userId === JSON.parse(storedUser).id) {
+    currentUser = new User(JSON.parse(storedUser));
+    return;
+  }
+
+  // Otherwise fetch new user data
   try {
     const response = await fetch("/data.json");
     const guestData = await response.json();
     const userData = guestData.find((guest) => guest.id === userId);
     if (userData) {
       currentUser = new User(userData);
+      // Store the new user data
+      localStorage.setItem("currentUser", JSON.stringify(userData));
     } else {
       currentUser = null;
     }
@@ -420,14 +344,22 @@ class Scene {
       this.params.nearPlane,
       this.params.farPlane
     );
-    //this.camera.position.set(0, 3.5, 22);
-    this.camera.updateProjectionMatrix();
+
+    // Choose which island to start at based on RSVP status
+    const startAt =
+      currentUser && currentUser.rsvped && !currentUser.confirmed
+        ? ISLAND_POSITIONS.rsvp // RSVP island
+        : ISLAND_POSITIONS.main; // Main island
+
+    // Set camera position and look at point
     this.camera.position.set(
-      -25 * startCamDistanceMultiplier,
-      10 + 5 * startCamDistanceMultiplier,
-      25 * startCamDistanceMultiplier
+      startAt.camera.x * startCamDistanceMultiplier,
+      startAt.camera.y + 5 * startCamDistanceMultiplier,
+      startAt.camera.z * startCamDistanceMultiplier
     );
-    this.camera.lookAt(this.scene.position);
+    this.camera.lookAt(
+      new THREE.Vector3(startAt.lookAt.x, startAt.lookAt.y, startAt.lookAt.z)
+    );
   }
 
   initControls() {
@@ -609,22 +541,38 @@ class CameraController {
   moveTo(targetPosition, duration = 2000) {
     if (this.isAnimating) return;
     this.isAnimating = true;
+
+    // Find the corresponding camera position and lookAt point for this island
+    let islandKey = Object.keys(ISLAND_POSITIONS).find((key) => {
+      const pos = ISLAND_POSITIONS[key].island;
+      return (
+        Math.abs(pos.x - targetPosition.x) < 0.1 &&
+        Math.abs(pos.y - targetPosition.y) < 0.1 &&
+        Math.abs(pos.z - targetPosition.z) < 0.1
+      );
+    });
+
+    if (!islandKey) return;
+
+    const islandData = ISLAND_POSITIONS[islandKey];
     this.currentTarget = targetPosition.clone();
 
     // Store initial positions
     const startPosition = this.camera.position.clone();
     const startTarget = this.controls.target.clone();
 
-    // Calculate target look-at point (slightly above the island)
-    const targetLookAt = new THREE.Vector3(
-      targetPosition.x,
-      targetPosition.y + 5,
-      targetPosition.z
+    // Get target camera position and lookAt point
+    const targetCameraPos = new THREE.Vector3(
+      islandData.camera.x,
+      islandData.camera.y,
+      islandData.camera.z
     );
 
-    // Calculate camera position (offset from target)
-    const cameraOffset = new THREE.Vector3(-40, 8.5, 25);
-    const finalCameraPos = targetPosition.clone().add(cameraOffset);
+    const targetLookAt = new THREE.Vector3(
+      islandData.lookAt.x,
+      islandData.lookAt.y,
+      islandData.lookAt.z
+    );
 
     const startTime = performance.now();
 
@@ -639,7 +587,7 @@ class CameraController {
           : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
       // Update camera position
-      this.camera.position.lerpVectors(startPosition, finalCameraPos, ease);
+      this.camera.position.lerpVectors(startPosition, targetCameraPos, ease);
 
       // Update controls target (look-at point)
       this.controls.target.lerpVectors(startTarget, targetLookAt, ease);
@@ -669,6 +617,8 @@ class Island {
       lightColor: "#ffb157",
       lightIntensity: 1.5,
       enableLightning: false,
+      enableRocks: true,
+      islandScale: 1, // Add new parameter for island base scaling
       ...params,
     };
 
@@ -807,12 +757,39 @@ class Island {
     this.island.scale.setScalar(Math.max(0, Math.min(1, scale)) * landScale);
   }
 
+  drawGround() {
+    this.ground = new THREE.Group();
+
+    // Create earth base with scaled geometry
+    const geoGround = new THREE.CylinderGeometry(
+      21 * this.params.islandScale, // Scale the top radius
+      6 * this.params.islandScale, // Scale the bottom radius
+      27 * this.params.islandScale, // Scale the height
+      12,
+      5
+    );
+    jitter(geoGround, 1.8 * this.params.islandScale); // Scale the jitter
+    geoGround.translate(0, -1.5 * this.params.islandScale, 0);
+    const earth = new THREE.Mesh(geoGround, this.earthMaterial);
+
+    // Add ground particle with scaled position
+    const particule = this.createGroundParticle();
+    particule.scale.multiplyScalar(this.params.islandScale);
+    this.ground.add(particule);
+
+    // Combine meshes
+    this.ground.add(earth);
+    this.ground.position.y = -16.8 * this.params.islandScale;
+    shadowSupport(this.ground);
+    this.island.add(this.ground);
+  }
+
   createGroundParticle() {
     const particles = new THREE.Group();
 
     for (let i = 0; i < 60; i++) {
       const geoGroundParticule = new THREE.TetrahedronGeometry(
-        randomize(1, 2.7), // Smaller size range
+        randomize(1, 2.7) * this.params.islandScale,
         randomize(2, 3)
       );
       jitter(geoGroundParticule, 0.0);
@@ -825,37 +802,19 @@ class Island {
         randomize(0.3, 0.6, true)
       );
 
-      // Spread particles around more
+      // Scale the particle positions
       particule.position.set(
-        randomize(randomize(-40, -15, true), randomize(15, 40, true), true),
-        randomize(-75, 6, true),
-        randomize(randomize(-40, -15, true), randomize(15, 40, true), true)
+        randomize(randomize(-40, -15, true), randomize(15, 40, true), true) *
+          this.params.islandScale,
+        randomize(-75, 6, true) * this.params.islandScale,
+        randomize(randomize(-40, -15, true), randomize(15, 40, true), true) *
+          this.params.islandScale
       );
 
       particles.add(particule);
     }
 
     return particles;
-  }
-
-  drawGround() {
-    this.ground = new THREE.Group();
-
-    // Create earth base
-    const geoGround = new THREE.CylinderGeometry(21, 6, 27, 12, 5);
-    jitter(geoGround, 1.8);
-    geoGround.translate(0, -1.5, 0);
-    const earth = new THREE.Mesh(geoGround, this.earthMaterial);
-
-    // Add ground particle
-    const particule = this.createGroundParticle();
-    this.ground.add(particule);
-
-    // Combine meshes
-    this.ground.add(earth);
-    this.ground.position.y = -16.8;
-    shadowSupport(this.ground);
-    this.island.add(this.ground);
   }
 
   drawCloud() {
@@ -957,7 +916,10 @@ class Island {
   init() {
     this.drawGround();
     this.drawCloud();
-    this.drawRocks();
+
+    if (this.params.enableRocks) {
+      this.drawRocks();
+    }
 
     this.drawHerbs();
     let i;
@@ -979,6 +941,7 @@ class GroundSurface {
       x: 0,
       y: 0,
       z: 0,
+      scale: 1,
       groundColor: 0x379351,
       material:
         params.material ||
@@ -988,16 +951,17 @@ class GroundSurface {
         }),
       ...params,
     };
-
-    // this.params.material.shadowSide = THREE.FrontSide;
-    // this.params.material.needsUpdate = true;
   }
 
   createGroundGeometry() {
     const geoGreen = new THREE.CylinderGeometry(22.2, 16.5, 9.0, 36, 3);
     jitter(geoGreen, 0.6);
     geoGreen.translate(0, -7.5, 0);
-    geoGreen.scale(1.05, 1, 1.05);
+    geoGreen.scale(
+      1.05 * this.params.scale,
+      this.params.scale,
+      1.05 * this.params.scale
+    );
     const mesh = new THREE.Mesh(geoGreen, this.params.material);
     shadowSupport(mesh);
     return mesh;
@@ -1319,6 +1283,7 @@ class SignPost {
       z: 0,
       rotation: 0,
       text: "Sign text here",
+      fontSize: 0.4,
       width: 7,
       height: 3.4,
       onClick: null,
@@ -1377,7 +1342,7 @@ class SignPost {
     loader.load("./text-paint.json", (font) => {
       // Split text into lines
       const lines = this.params.text.split("\n");
-      const lineHeight = 0.5; // Height between lines
+      const lineHeight = this.params.fontSize + 0.1; // Height between lines
 
       // Create group to hold all text lines
       const textGroup = new THREE.Group();
@@ -1386,7 +1351,7 @@ class SignPost {
       lines.forEach((line, index) => {
         const textGeometry = new TextGeometry(line, {
           font: font,
-          size: 0.4,
+          size: this.params.fontSize,
           depth: 0.05,
           curveSegments: 12,
           bevelEnabled: false,
@@ -1736,6 +1701,7 @@ class HugeText {
       size: params.size || 5,
       color: params.color || 0xffffff,
       rotation: params.rotation || 0,
+      materialProps: params.texture || {},
     };
     this.textGroup = new THREE.Group();
   }
@@ -1746,7 +1712,7 @@ class HugeText {
       const textGeometry = new TextGeometry(this.params.text, {
         font: font,
         size: this.params.size,
-        depth: this.params.size * 0.3, // Increased depth for taller text
+        depth: this.params.size * 0.3,
         curveSegments: 12,
         bevelEnabled: false,
       });
@@ -1755,9 +1721,9 @@ class HugeText {
       const textWidth =
         textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
 
-      const textMaterial = new THREE.MeshPhongMaterial({
+      const textMaterial = new THREE.MeshPhysicalMaterial({
         color: this.params.color,
-        flatShading: true,
+        ...this.params.materialProps, // Spread all material properties
       });
 
       const textMesh = new THREE.Mesh(textGeometry, textMaterial);
@@ -1765,7 +1731,7 @@ class HugeText {
       textMesh.position.y = this.params.y;
       textMesh.position.z = this.params.z;
       textMesh.rotation.y = this.params.rotation;
-      textMesh.scale.y = 2; // Scale vertically to make text taller
+      textMesh.scale.y = 2;
 
       this.textGroup.add(textMesh);
 
@@ -1779,12 +1745,60 @@ const scene = new Scene();
 scene.init();
 scene.render();
 
+// RSVP no
+const buildNoIsland = () => {
+  const pos = ISLAND_POSITIONS.no;
+  const island5 = new Island(scene.scene, scene.camera, {
+    x: pos.island.x,
+    y: pos.island.y,
+    z: pos.island.z,
+    herbs: 0,
+    lightIntensity: 1.3,
+    enableLightning: true,
+    islandScale: 0.5,
+    enableRocks: false,
+  });
+
+  island5.init();
+
+  const ground = new GroundSurface({
+    x: island5.params.x,
+    y: island5.params.y,
+    z: island5.params.z,
+    scale: 0.5,
+  });
+  island5.addItem(ground.createGroundGeometry());
+
+  // Add dismissive sign
+  const signpost = new SignPost(scene.scene, {
+    x: -5,
+    y: -3,
+    z: 6,
+    rotation: -0.6,
+    text: "\nWhy are you\nstill here?\n\n(You RSVP'd no)",
+  });
+  signpost.init();
+  island5.addItem(signpost.signpost);
+
+  // Add rain effect
+  const rain = new RainEffect(scene.scene);
+  island5.addItem(rain.raindrops);
+
+  // Add rain animation to render loop
+  const originalRender = scene.render.bind(scene);
+  scene.render = function () {
+    rain.animate();
+    originalRender();
+  };
+};
+
+// MAIN
 const buildIsland_1 = () => {
-  // Island
+  const pos = ISLAND_POSITIONS.main;
   const island = new Island(scene.scene, scene.camera, {
-    x: 0,
-    y: 0,
-    z: 0,
+    x: pos.island.x,
+    y: pos.island.y,
+    z: pos.island.z,
     herbs: 10,
     lightColor: "#ffb039",
     lightIntensity: 2.5,
@@ -1800,6 +1814,20 @@ const buildIsland_1 = () => {
   });
   island.addItem(ground.createGroundGeometry());
 
+  // Navigation Help Signpost
+  const navigationSignpost = new SignPost(scene.scene, {
+    x: 0,
+    y: -3,
+    z: 0,
+    rotation: -0.3,
+    width: 10,
+    height: 5,
+    text: "We've moved!\n\nFly to other\nislands by\nclicking them",
+    fontSize: 0.6,
+  });
+  navigationSignpost.init();
+  island.addItem(navigationSignpost.signpost);
+
   // Welcome Signpost
   const signpost = new SignPost(scene.scene, {
     x: 0,
@@ -1807,6 +1835,12 @@ const buildIsland_1 = () => {
     z: 20,
     rotation: 0,
     text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\nSave the date",
+    identifier: "save-the-date",
+    onClick: () => {
+      const user = JSON.parse(localStorage.getItem("currentUser"));
+      user.rsvped = !user.rsvped;
+      localStorage.setItem("currentUser", JSON.stringify(user));
+    },
   });
   signpost.init();
   island.addItem(signpost.signpost);
@@ -1820,8 +1854,8 @@ const buildIsland_1 = () => {
     text: currentUser
       ? `${
           currentUser.numberOfKids > 0 ? "" : "\n"
-        }${currentUser.getFamilyString()}\n\nMore details\ncoming soon!`
-      : "\n\nMore details\ncoming soon!",
+        }${currentUser.getFamilyString()}\n\nFly around for more\ninfo...`
+      : "\n\nFly around for more\ninfo...",
   });
   signpost2.init();
   island.addItem(signpost2.signpost);
@@ -1832,7 +1866,7 @@ const buildIsland_1 = () => {
     y: -3,
     z: -19,
     rotation: 3,
-    text: "...either by email\nor here depending \non how many more\nhours i want to\nspend on this :)",
+    text: "\ni'm adding this to\nmy CV at this\npoint.\n\nHOURS",
   });
   signpost3.init();
   island.addItem(signpost3.signpost);
@@ -1849,12 +1883,13 @@ const buildIsland_1 = () => {
   };
 };
 
-// Island 2
+// RSVP
 const buildIsland_2 = () => {
+  const pos = ISLAND_POSITIONS.rsvp;
   const island2 = new Island(scene.scene, scene.camera, {
-    x: 35,
-    y: 30,
-    z: -200,
+    x: pos.island.x,
+    y: pos.island.y,
+    z: pos.island.z,
     herbs: 10,
     lightColor: "#fffdfa",
     lightIntensity: 0.8,
@@ -1869,37 +1904,44 @@ const buildIsland_2 = () => {
   });
   island2.addItem(ground.createGroundGeometry());
 
-  // Add "Yes" signpost
-  const signpostYes = new SignPost(scene.scene, {
-    x: -15,
-    y: -3,
-    z: 6,
-    rotation: -0.5,
-    text: "\n\nI'll be there!",
-    identifier: "rsvp-yes",
-    onClick: () => {
-      alert(`See you there, ${currentUser.name}!`);
-      sendTelegramMessage(`${currentUser.name} RSVP: Yes`);
-    },
-  });
-  signpostYes.init();
-  island2.addItem(signpostYes.signpost);
+  if ((currentUser.rsvped && currentUser.confirmed) || !currentUser.rsvped) {
+    // Add "Yes" signpost
+    const signpostYes = new SignPost(scene.scene, {
+      x: -15,
+      y: -3,
+      z: 6,
+      rotation: -0.5,
+      text: "\n\nI'll be there!",
+      identifier: "rsvp-yes",
+      onClick: () => {
+        alert(`See you there, ${currentUser.name}!`);
+        sendTelegramMessage(`${currentUser.name} RSVP: Yes`);
+        currentUser.setRSVP(true);
+      },
+    });
+    signpostYes.init();
+    island2.addItem(signpostYes.signpost);
+  }
 
-  // Add "No" signpost
-  const signpostNo = new SignPost(scene.scene, {
-    x: 0,
-    y: -3,
-    z: 18,
-    rotation: -0.8,
-    text: "\n\nGot better things\nto do tbh",
-    identifier: "rsvp-no",
-    onClick: () => {
-      alert(`Cheaper for us, ${currentUser.name}.`);
-      sendTelegramMessage(`${currentUser.name} RSVP: No`);
-    },
-  });
-  signpostNo.init();
-  island2.addItem(signpostNo.signpost);
+  if ((currentUser.rsvped && !currentUser.confirmed) || !currentUser.rsvped) {
+    // Add "No" signpost
+    const signpostNo = new SignPost(scene.scene, {
+      x: 0,
+      y: -3,
+      z: 18,
+      rotation: -0.8,
+      text: "\n\nGot better things\nto do tbh",
+      identifier: "rsvp-no",
+      onClick: () => {
+        alert(`Cheaper for us, ${currentUser.name}.`);
+        sendTelegramMessage(`${currentUser.name} RSVP: No`);
+        currentUser.setRSVP(false);
+        window.location.reload();
+      },
+    });
+    signpostNo.init();
+    island2.addItem(signpostNo.signpost);
+  }
 
   // Huge Text
   const hugeText = new HugeText(scene.scene, {
@@ -1939,12 +1981,13 @@ const buildIsland_2 = () => {
   island2.addItem(bblockJen.bblock);
 };
 
-// Island 3
+// FOOD
 const buildIsland_3 = () => {
+  const pos = ISLAND_POSITIONS.food;
   const island3 = new Island(scene.scene, scene.camera, {
-    x: 150,
-    y: 70,
-    z: -120,
+    x: pos.island.x,
+    y: pos.island.y,
+    z: pos.island.z,
     herbs: 1,
     lightColor: "#ffd599",
     lightIntensity: 0.5,
@@ -1959,16 +2002,17 @@ const buildIsland_3 = () => {
   });
   island3.addItem(ground.createGroundGeometry());
 
-  // Add signpost with click handler
-  const signpost = new SignPost(scene.scene, {
-    x: -5,
-    y: -3,
-    z: 20,
-    rotation: -0.4,
-    text: "You're very far from\nwhere you should be.\n\nI said go away!",
+  // Huge Text
+  const hugeText = new HugeText(scene.scene, {
+    x: 12,
+    y: -4,
+    z: -23,
+    rotation: -0.7,
+    size: 12,
+    text: "FOOD",
   });
-  signpost.init();
-  island3.addItem(signpost.signpost);
+  hugeText.init();
+  island3.addItem(hugeText.textGroup);
 
   // Add sheep
   const sheep = new Sheep(scene.scene, {
@@ -2009,16 +2053,16 @@ const buildIsland_3 = () => {
   island3.addItem(tree.treeGroup);
 };
 
-// Island 4
+// STAY
 const buildIsland_4 = () => {
+  const pos = ISLAND_POSITIONS.stay;
   const island4 = new Island(scene.scene, scene.camera, {
-    x: -120,
-    y: 70,
-    z: -300,
-    herbs: 100,
-    lightColor: "#33c5e6",
-    lightIntensity: 0.6,
-    enableLightning: true,
+    x: pos.island.x,
+    y: pos.island.y,
+    z: pos.island.z,
+    herbs: 10,
+    lightColor: "#e633d4",
+    lightIntensity: 0.8,
   });
 
   island4.init();
@@ -2030,37 +2074,76 @@ const buildIsland_4 = () => {
   });
   island4.addItem(ground.createGroundGeometry());
 
+  // Cabin
+  const cabin = new Cabin(scene.scene, {
+    x: 10,
+    y: -2,
+    z: 5,
+    // rotation: -1.2,
+  });
+  cabin.init();
+  island4.addItem(cabin.cabin);
+
+  // huge text
+  const hugeText = new HugeText(scene.scene, {
+    x: -3,
+    y: -4,
+    z: 0,
+    rotation: 0.6,
+    size: 12,
+    text: "STAY",
+    texture: {
+      color: 0x379351,
+      roughness: 100,
+      metalness: 1,
+    },
+  });
+  hugeText.init();
+  island4.addItem(hugeText.textGroup);
+
   // Add signpost
   const signpost = new SignPost(scene.scene, {
     x: -8,
     y: -3,
     z: 20,
     rotation: -0.5,
-    text: "\nWhy you snooping?\n\nGo away!",
+    text: `\nThere's a lot of\nstuff to say here\n\nso touch that sign ->`,
   });
   signpost.init();
   island4.addItem(signpost.signpost);
 
-  // Add rain effect
-  const rain = new RainEffect(scene.scene);
-  island4.addItem(rain.raindrops);
-
-  // Add rain animation to the render loop
-  const originalRender = scene.render.bind(scene);
-  scene.render = function () {
-    rain.animate();
-    originalRender();
-  };
+  // Add signpost
+  const accomData = get_accom_data(currentUser.accommodation);
+  const signpostPrice = new SignPost(scene.scene, {
+    x: 0,
+    y: -3,
+    z: 20,
+    rotation: -0.4,
+    text: `\nDetails\n\n(Touch this sign)`,
+    onClick: () => {
+      showPopup(
+        `A place to rest your head`,
+        `${all_text}<br><br>${accomData.text}:<br><br>${accomData.name}<br><a href="${accomData.url}" target="_blank">${accomData.url}</a>`
+      );
+    },
+  });
+  signpostPrice.init();
+  island4.addItem(signpostPrice.signpost);
 };
 
 initUser()
   .then(() => {
     if (currentUser) {
-      console.log("User initialized: " + currentUser.name);
-      buildIsland_1();
-      buildIsland_2();
-      buildIsland_3();
-      buildIsland_4();
+      if (currentUser.rsvped && !currentUser.confirmed) {
+        buildNoIsland();
+        scene.cameraController.moveTo(ISLAND_POSITIONS.no.camera);
+      } else {
+        console.log("User initialized: " + currentUser.name);
+        buildIsland_1();
+        buildIsland_2();
+        buildIsland_3();
+        buildIsland_4();
+      }
     }
   })
   .catch((e) => {
@@ -2075,3 +2158,4 @@ window.addEventListener("resize", () => {
   scene.camera.updateProjectionMatrix();
   scene.renderer.setSize(window.innerWidth, window.innerHeight);
 });
+document.querySelector(".close-button").addEventListener("click", hidePopup);

@@ -19,6 +19,7 @@
 
         if (urlUserId) {
           localStorage.setItem("userId", urlUserId);
+          localStorage.removeItem("currentUser");
           // Force reload without URL parameters to avoid infinite loop
           if (window.location.search) {
             window.location.href = window.location.pathname;
@@ -47,6 +48,13 @@
       <h3>Please enter your user ID:</h3>
       <input type="number" id="userIdInput" min="0" max="28" />
       <button onclick="submitUserId()">Submit</button>
+    </div>
+    <div id="popup" class="popup">
+      <div class="popup-content">
+        <span class="close-button">&times;</span>
+        <h2 id="popup-title"></h2>
+        <p id="popup-text"></p>
+      </div>
     </div>
   </body>
 </html>
