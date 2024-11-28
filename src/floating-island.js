@@ -23,33 +23,52 @@ const startCamDistanceMultiplier = 2;
 const landScale = 1;
 let currentUser = null;
 
-// Add this after the initial constants
-const ISLAND_POSITIONS = {
-  main: {
-    island: { x: 0, y: 0, z: 0 },
-    camera: { x: -25, y: 15, z: 35 },
-    lookAt: { x: 0, y: 0, z: 0 },
+const CAMERA_OFFSET = { x: -45, y: 25, z: 45 };
+const BASE_POSITIONS = {
+  main: { x: 0, y: 0, z: 0 },
+  rsvp: { x: 35, y: 30, z: -200 },
+  food: { x: 150, y: 10, z: -120 },
+  stay: { x: -100, y: -40, z: -250 },
+  no: { x: 0, y: 0, z: 0 },
+};
+
+const ISLAND_POSITIONS = Object.entries(BASE_POSITIONS).reduce(
+  (acc, [key, pos]) => {
+    acc[key] = {
+      island: { ...pos },
+      camera: {
+        x: pos.x + CAMERA_OFFSET.x,
+        y: pos.y + CAMERA_OFFSET.y,
+        z: pos.z + CAMERA_OFFSET.z,
+      },
+      lookAt: { ...pos },
+    };
+    return acc;
   },
-  rsvp: {
-    island: { x: 35, y: 30, z: -200 },
-    camera: { x: 10, y: 45, z: -175 },
-    lookAt: { x: 35, y: 30, z: -200 },
-  },
-  food: {
-    island: { x: 150, y: 10, z: -120 },
-    camera: { x: 125, y: 25, z: -95 },
-    lookAt: { x: 150, y: 10, z: -120 },
-  },
-  stay: {
-    island: { x: -100, y: -40, z: -250 },
-    camera: { x: -115, y: -25, z: -195 },
-    lookAt: { x: -100, y: -40, z: -250 },
-  },
-  no: {
-    island: { x: 0, y: 0, z: 0 },
-    camera: { x: 0, y: 0, z: 5 },
-    lookAt: { x: 0, y: 0, z: 0 },
-  },
+  {}
+);
+
+// Override specific camera positions where needed
+// ISLAND_POSITIONS.no.camera = {
+//   x: ISLAND_POSITIONS.no.island.x + 0,
+//   y: ISLAND_POSITIONS.no.island.y + 0,
+//   z: ISLAND_POSITIONS.no.island.z + 5,
+// };
+// ISLAND_POSITIONS.rsvp.camera = {
+//   x: ISLAND_POSITIONS.rsvp.island.x + 10,
+//   y: ISLAND_POSITIONS.rsvp.island.y + 45,
+//   z: ISLAND_POSITIONS.rsvp.island.z - 175,
+// };
+// ISLAND_POSITIONS.food.camera = {
+//   x: ISLAND_POSITIONS.food.island.x + 125,
+//   y: ISLAND_POSITIONS.food.island.y + 25,
+//   z: ISLAND_POSITIONS.food.island.z - 95,
+// };
+
+ISLAND_POSITIONS.stay.camera = {
+  x: ISLAND_POSITIONS.stay.island.x - 15,
+  y: ISLAND_POSITIONS.stay.island.y + 25,
+  z: ISLAND_POSITIONS.stay.island.z + 55,
 };
 
 const setupIslandLight = (
@@ -2109,7 +2128,7 @@ const buildIsland_4 = () => {
     x: -8,
     y: -3,
     z: 20,
-    rotation: -0.5,
+    rotation: -0.4,
     text: `\nThere's a lot of\nstuff to say here\n\nso touch that sign ->`,
   });
   signpost.init();
@@ -2121,7 +2140,7 @@ const buildIsland_4 = () => {
     x: 0,
     y: -3,
     z: 20,
-    rotation: -0.4,
+    rotation: -0.3,
     text: `\nDetails\n\n(Touch this sign)`,
     onClick: () => {
       showPopup(
