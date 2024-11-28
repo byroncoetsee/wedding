@@ -432,7 +432,7 @@ class Scene {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let isDragging = false;
-    let startPosition = { x: 0, y: 0 };
+    let startPosition = null; // Changed from {x: 0, y: 0} to null
 
     const handleClick = (event) => {
       // Get click coordinates
@@ -496,18 +496,21 @@ class Scene {
         event.clientY || (event.touches && event.touches[0].clientY);
 
       if (
-        Math.abs(currentX - startPosition.x) > 10 ||
-        Math.abs(currentY - startPosition.y) > 10
+        Math.abs(currentX - startPosition.x) > 5 ||
+        Math.abs(currentY - startPosition.y) > 5
       ) {
+        // Reduced threshold from 10 to 5
         isDragging = true;
       }
     };
 
     const handleDragEnd = (event) => {
-      if (!isDragging) {
+      if (!isDragging && startPosition) {
+        // Added startPosition check
         handleClick(event);
       }
       startPosition = null;
+      isDragging = false; // Reset isDragging
     };
 
     const canvas = this.renderer.domElement;
