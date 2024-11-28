@@ -7,6 +7,7 @@ import { sendTelegramMessage } from "./telegram.js";
 import Cabin from "./cabin.js";
 import Cinema from "./cinema.js";
 import { get_accom_data, all_text } from "./text.js";
+import House from "./faraway.js";
 
 import {
   jitter,
@@ -2221,12 +2222,22 @@ const buildVenueIsland = () => {
   hugeText.init();
   venueIsland.addItem(hugeText.textGroup);
 
+  // House
+  // const house = new House(scene.scene, {
+  //   x: 0,
+  //   y: -2,
+  //   z: 0,
+  //   rotation: -1,
+  // });
+  // house.init();
+  // venueIsland.addItem(house.house);
+
   // Add some trees
   for (let i = 0; i < 5; i++) {
     const tree = new Tree(scene.scene, {
       x: -10 + Math.random() * 20,
       y: -3,
-      z: -10 + Math.random() * 20,
+      z: -20 + Math.random() * 20,
       scale: 0.8 + Math.random() * 0.4,
     });
     tree.init();
@@ -2239,6 +2250,7 @@ const buildVenueIsland = () => {
       x: -8 + Math.random() * 16,
       y: -3,
       z: -8 + Math.random() * 16,
+      rotation: degreesToRadians(Math.random() * 360),
       scale: 0.6,
     });
     sheep.init();
