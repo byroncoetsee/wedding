@@ -461,12 +461,26 @@ class Scene {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let isDragging = false;
-    let startPosition = null; // Changed from {x: 0, y: 0} to null
+    let startPosition = null;
 
     const handleClick = (event) => {
-      // Get click coordinates
-      const x = event.clientX || (event.touches && event.touches[0].clientX);
-      const y = event.clientY || (event.touches && event.touches[0].clientY);
+      if (!event) return; // Guard against missing event object
+
+      // Get click coordinates, handling both mouse and touch events
+      const x =
+        event.clientX !== undefined
+          ? event.clientX
+          : event.touches && event.touches[0]
+          ? event.touches[0].clientX
+          : null;
+      const y =
+        event.clientY !== undefined
+          ? event.clientY
+          : event.touches && event.touches[0]
+          ? event.touches[0].clientY
+          : null;
+
+      if (x === null || y === null) return; // Guard against missing coordinates
 
       // Convert to normalized device coordinates
       mouse.x = (x / window.innerWidth) * 2 - 1;
@@ -487,8 +501,11 @@ class Scene {
       if (intersects.length > 0) {
         const clickedObject = intersects[0].object;
 
-        // Handle signpost clicks
-        if (clickedObject.userData.onClick) {
+        // Handle signpost clicks - only call if onClick exists and is a function
+        if (
+          clickedObject.userData.onClick &&
+          typeof clickedObject.userData.onClick === "function"
+        ) {
           clickedObject.userData.onClick();
           return;
         }
@@ -509,37 +526,44 @@ class Scene {
     };
 
     const handleDragStart = (event) => {
+      if (!event) return;
       isDragging = false;
       startPosition = {
-        x: event.clientX || (event.touches && event.touches[0].clientX),
-        y: event.clientY || (event.touches && event.touches[0].clientY),
+        x:
+          event.clientX ||
+          (event.touches && event.touches[0] ? event.touches[0].clientX : null),
+        y:
+          event.clientY ||
+          (event.touches && event.touches[0] ? event.touches[0].clientY : null),
       };
     };
 
     const handleDragMove = (event) => {
-      if (!startPosition) return;
+      if (!startPosition || !event) return;
 
       const currentX =
-        event.clientX || (event.touches && event.touches[0].clientX);
+        event.clientX ||
+        (event.touches && event.touches[0] ? event.touches[0].clientX : null);
       const currentY =
-        event.clientY || (event.touches && event.touches[0].clientY);
+        event.clientY ||
+        (event.touches && event.touches[0] ? event.touches[0].clientY : null);
+
+      if (currentX === null || currentY === null) return;
 
       if (
         Math.abs(currentX - startPosition.x) > 5 ||
         Math.abs(currentY - startPosition.y) > 5
       ) {
-        // Reduced threshold from 10 to 5
         isDragging = true;
       }
     };
 
     const handleDragEnd = (event) => {
       if (!isDragging && startPosition) {
-        // Added startPosition check
         handleClick(event);
       }
       startPosition = null;
-      isDragging = false; // Reset isDragging
+      isDragging = false;
     };
 
     const canvas = this.renderer.domElement;
