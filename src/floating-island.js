@@ -1978,8 +1978,13 @@ const buildIsland_2 = () => {
       identifier: "rsvp-yes",
       onClick: () => {
         alert(`See you there, ${currentUser.name}!`);
-        sendTelegramMessage(`${currentUser.name} RSVP: Yes`);
+        // sendTelegramMessage(`${currentUser.name} RSVP: Yes`);
         currentUser.setRSVP(true);
+        window.location.reload();
+        window.open(
+          "https://chat.whatsapp.com/LBY6xdqwoG8A7Kaxmh5IlN",
+          "_blank"
+        );
       },
     });
     signpostYes.init();
