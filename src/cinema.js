@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+import { TextureLoader } from "three";
 
 class Cinema {
   constructor(scene, params = {}) {
@@ -25,11 +26,13 @@ class Cinema {
 
     // Position according to params
     this.cinemaGroup.position.set(this.params.x, this.params.y, this.params.z);
-    // this.cinemaGroup.rotation.y = this.params.rotation;
+    this.cinemaGroup.rotation.y = this.params.rotation;
 
     // Materials
     this.screenMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
+      metalness: 0.1,
+      roughness: 0.8,
     });
 
     this.frameMaterial = new THREE.MeshPhongMaterial({
@@ -50,6 +53,12 @@ class Cinema {
   }
 
   createScreen() {
+    const textureLoader = new TextureLoader();
+    textureLoader.load("./FAE_cinema.jpg", (texture) => {
+      this.screenMaterial.map = texture;
+      this.screenMaterial.needsUpdate = true;
+    });
+
     // Create screen
     const screenGeometry = new THREE.PlaneGeometry(
       this.params.width,
@@ -85,10 +94,10 @@ class Cinema {
       lightSourcePosition.z - 1
     );
     this.spotlight.target = this.screen;
-    this.spotlight.angle = 0.6;
+    this.spotlight.angle = 0.8;
     this.spotlight.penumbra = 0.2;
-    this.spotlight.decay = 0.1;
-    this.spotlight.distance = 30;
+    this.spotlight.decay = 0.5;
+    this.spotlight.distance = 50;
     this.spotlight.castShadow = true;
 
     // Create projector body

@@ -82,6 +82,12 @@ ISLAND_POSITIONS.stay.camera = {
   z: ISLAND_POSITIONS.stay.island.z + 55,
 };
 
+ISLAND_POSITIONS.venue.camera = {
+  x: ISLAND_POSITIONS.venue.island.x - 35,
+  y: ISLAND_POSITIONS.venue.island.y + 10,
+  z: ISLAND_POSITIONS.venue.island.z + 5,
+};
+
 const setupIslandLight = (
   scene,
   position,
@@ -2071,6 +2077,17 @@ const buildIsland_3 = () => {
   hugeText.init();
   island3.addItem(hugeText.textGroup);
 
+  // Signpost
+  const signpost = new SignPost(scene.scene, {
+    x: -15,
+    y: -3,
+    z: 10,
+    rotation: -0.7,
+    text: "\n\nStill building this\nisland...",
+  });
+  signpost.init();
+  island3.addItem(signpost.signpost);
+
   // Add sheep
   const sheep = new Sheep(scene.scene, {
     x: -5,
@@ -2163,7 +2180,7 @@ const buildIsland_4 = () => {
     x: -8,
     y: -3,
     z: 20,
-    rotation: -0.4,
+    rotation: -0.3,
     text: `\nThere's a lot of\nstuff to say here\n\nso touch that sign ->`,
   });
   signpost.init();
@@ -2175,7 +2192,7 @@ const buildIsland_4 = () => {
     x: 0,
     y: -3,
     z: 20,
-    rotation: -0.3,
+    rotation: -0.1,
     text: `\nDetails\n\n(Touch this sign)`,
     onClick: () => {
       showPopup(
@@ -2222,48 +2239,52 @@ const buildVenueIsland = () => {
   hugeText.init();
   venueIsland.addItem(hugeText.textGroup);
 
-  // House
-  // const house = new House(scene.scene, {
-  //   x: 0,
-  //   y: -2,
-  //   z: 0,
-  //   rotation: -1,
-  // });
-  // house.init();
-  // venueIsland.addItem(house.house);
+  // // Add some trees
+  // for (let i = 0; i < 5; i++) {
+  //   const tree = new Tree(scene.scene, {
+  //     x: -10 + Math.random() * 20,
+  //     y: -3,
+  //     z: -20 + Math.random() * 20,
+  //     scale: 0.8 + Math.random() * 0.4,
+  //   });
+  //   tree.init();
+  //   venueIsland.addItem(tree.treeGroup);
+  // }
 
-  // Add some trees
-  for (let i = 0; i < 5; i++) {
-    const tree = new Tree(scene.scene, {
-      x: -10 + Math.random() * 20,
-      y: -3,
-      z: -20 + Math.random() * 20,
-      scale: 0.8 + Math.random() * 0.4,
-    });
-    tree.init();
-    venueIsland.addItem(tree.treeGroup);
-  }
+  // Cinema
+  const cinema = new Cinema(scene.scene, {
+    x: -3,
+    y: -2.3,
+    z: 12,
+    rotation: degreesToRadians(270),
+  });
+  cinema.init();
+  venueIsland.addItem(cinema.cinemaGroup);
 
   // Add some sheep
-  for (let i = 0; i < 3; i++) {
-    const sheep = new Sheep(scene.scene, {
-      x: -8 + Math.random() * 16,
-      y: -3,
-      z: -8 + Math.random() * 16,
-      rotation: degreesToRadians(Math.random() * 360),
-      scale: 0.6,
-    });
-    sheep.init();
-    venueIsland.addItem(sheep.sheep);
-  }
+  // for (let i = 0; i < 3; i++) {
+  //   const sheep = new Sheep(scene.scene, {
+  //     x: -8 + Math.random() * 16,
+  //     y: -3,
+  //     z: -8 + Math.random() * 16,
+  //     rotation: degreesToRadians(Math.random() * 360),
+  //     scale: 0.6,
+  //   });
+  //   sheep.init();
+  //   venueIsland.addItem(sheep.sheep);
+  // }
 
   // Add venue sign
   const venueSign = new SignPost(scene.scene, {
-    x: 0,
+    x: -12,
     y: -3,
-    z: 0,
-    rotation: 0,
-    text: "\nThis is where\nthe jol is",
+    z: -0,
+    height: 4,
+    rotation: degreesToRadians(290),
+    text: "Faraway Estate\n\n6km outside of\nVilliersdorp\n\nTouch here directions",
+    onClick: () => {
+      window.open("https://maps.app.goo.gl/BdZzz6LwzYxrrGgAA", "_blank");
+    },
   });
   venueSign.init();
   venueIsland.addItem(venueSign.signpost);
