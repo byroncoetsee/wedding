@@ -197,13 +197,14 @@ const showDietaryPopup = (user) => {
         `Requirements: ${dietaryRequirements}`
       );
       hidePopup();
+      window.location.reload();
     } catch (error) {
       console.error('Error sending dietary requirements:', error);
       alert('There was an error saving your dietary requirements. Please try again.');
     }
 
     // Refresh the page to show updated dietary requirements
-    window.location.reload();
+    // window.location.reload();
   };
 
   popup.style.display = "block";
