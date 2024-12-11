@@ -81,7 +81,10 @@
     "name": "Jan",
     "partnerName": "Nick",
     "family": false,
-    "kidNames": ["Livvy", "Liam"],
+    "kidNames": [
+      "Livvy",
+      "Liam"
+    ],
     "confirmed": true,
     "accom": "Container House, Pendennis",
     "dietary": "Everything",
@@ -92,7 +95,10 @@
     "name": "Rob",
     "partnerName": "Nades",
     "family": false,
-    "kidNames": ["Tanner", "Sage"],
+    "kidNames": [
+      "Tanner",
+      "Sage"
+    ],
     "confirmed": true,
     "accom": "Container House, Pendennis",
     "dietary": "None",
@@ -117,7 +123,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Main Room 1",
-    "dietary": "None",
+    "dietary": "all - deez nuts",
     "rsvped": true
   },
   {
@@ -158,7 +164,10 @@
     "name": "Simone",
     "partnerName": null,
     "family": false,
-    "kidNames": ["Ashleigh", "Leah"],
+    "kidNames": [
+      "Ashleigh",
+      "Leah"
+    ],
     "confirmed": false,
     "accom": "Bergendal",
     "dietary": "None",
@@ -213,7 +222,10 @@
     "name": "Mike",
     "partnerName": "Kate",
     "family": false,
-    "kidNames": ["Theo", "Baby"],
+    "kidNames": [
+      "Theo",
+      "Baby"
+    ],
     "confirmed": true,
     "accom": "Courtyard Cottage 2, Faraway Estate",
     "dietary": "None",
@@ -224,7 +236,10 @@
     "name": "Jarryd",
     "partnerName": "Tam",
     "family": false,
-    "kidNames": ["Hunter", "Sienna"],
+    "kidNames": [
+      "Hunter",
+      "Sienna"
+    ],
     "confirmed": true,
     "accom": "Faraway Estate, Loft Room",
     "dietary": "None",
@@ -312,7 +327,9 @@
     "name": "Sonja",
     "partnerName": null,
     "family": false,
-    "kidNames": ["Neil"],
+    "kidNames": [
+      "Neil"
+    ],
     "confirmed": false,
     "accom": "Bergendal",
     "dietary": "None",
@@ -323,7 +340,9 @@
     "name": "Kerryn",
     "partnerName": null,
     "family": false,
-    "kidNames": ["Addison"],
+    "kidNames": [
+      "Addison"
+    ],
     "confirmed": true,
     "accom": "Rietspruit",
     "dietary": "None",
