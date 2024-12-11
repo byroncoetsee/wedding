@@ -3911,7 +3911,7 @@ stuff to say here
 so touch that sign ->`});r.init(),t.addItem(r.signpost);const a=Zg(Jt.accommodation),o=new Ke(Pt.scene,{x:0,y:-3,z:20,rotation:-.1,text:`
 Details
 
-(Touch this sign)`,onClick:()=>{zg("A place to rest your head",`${Hg}<br><br>${a.text}:<br><br>${a.name}<br><a href="${a.url}" target="_blank">${a.url}</a>`)}});o.init(),t.addItem(o.signpost)},a_=()=>{const i=me.venue,t=new Ui(Pt.scene,Pt.camera,{x:i.island.x,y:i.island.y,z:i.island.z,herbs:15,lightColor:"#90EE90",lightIntensity:2});t.init();const e=new Ni({x:t.params.x,y:t.params.y,z:t.params.z,groundColor:9498256});t.addItem(e.createGroundGeometry());const n=new rr(Pt.scene,{x:35,y:-4,z:-27,rotation:-1.5,size:12,text:"VENUE"});n.init(),t.addItem(n.textGroup);const s=new kg(Pt.scene,{x:-3,y:-2.3,z:12,rotation:Ln(270)});s.init(),t.addItem(s.cinemaGroup);const r=new Ke(Pt.scene,{x:-12,y:-3,z:-0,height:4,rotation:Ln(290),text:`Faraway Estate
+(Touch this sign)`,onClick:()=>{zg("A place to rest your head",`${Hg}<br><br>${a.text}:<br><br>${a.name}<br><a href="${a.url}" target="_blank">${a.url}</a>`)}});o.init(),t.addItem(o.signpost)},a_=()=>{const i=me.venue,t=new Ui(Pt.scene,Pt.camera,{x:i.island.x,y:i.island.y,z:i.island.z,herbs:15,lightColor:"#90EE90",lightIntensity:2});t.init();const e=new Ni({x:t.params.x,y:t.params.y,z:t.params.z,groundColor:9498256});t.addItem(e.createGroundGeometry());const n=new rr(Pt.scene,{x:35,y:-4,z:-27,rotation:-1.5,size:12,text:"VENUE"});n.init(),t.addItem(n.textGroup);const s=new kg(Pt.scene,{x:-3,y:-2.3,z:12,rotation:Ln(270)});s.init(),t.addItem(s.cinemaGroup);const r=new Ke(Pt.scene,{x:-12,y:-3,z:-0,height:6,fontSize:.5,width:10,rotation:Ln(290),text:`Faraway Estate
 
 6km outside of
 Villiersdorp
