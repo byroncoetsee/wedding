@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { sendTelegramMessage } from "./telegram";
 
 // Add this at the start of the file, after imports
 const DEBUG = true;
@@ -138,6 +139,73 @@ function noiseMap(size = 256, intensity = 20, repeat = 30) {
   return texture;
 }
 
+const showDietaryPopup = (user) => {
+  const popup = document.getElementById("popup");
+  const popupTitle = document.getElementById("popup-title");
+  const popupText = document.getElementById("popup-text");
+
+  popupTitle.textContent = "Dietary Requirements";
+
+  // Create form content
+  const formContent = `
+    <form id="dietary-form">
+    <br>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="diet" value="all" ${user.dietaryRequirements === 'None' ? 'checked' : ''}>
+          All food (no restrictions)
+        </label>
+        <label>
+          <input type="radio" name="diet" value="vegetarian" ${user.dietaryRequirements === 'Vegetarian' ? 'checked' : ''}>
+          Vegetarian/Vegan
+        </label>
+      </div>
+      <div class="allergen-group">
+        <label for="allergens">Allergies/Additional Requirements:</label>
+        <input type="text" id="allergens" name="allergens" placeholder="e.g., nuts, shellfish, etc.">
+      </div>
+      <br>
+      <button type="submit" class="submit-btn">Save Dietary Requirements</button>
+    </form>
+  `;
+
+  popupText.innerHTML = formContent;
+
+  // Add form submit handler
+  const form = document.getElementById("dietary-form");
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+
+    const dietType = form.querySelector('input[name="diet"]:checked').value;
+    const allergens = form.querySelector('#allergens').value.trim();
+
+    // Combine diet type and allergens
+    var dietaryRequirements = dietType
+
+    if (allergens) {
+      dietaryRequirements += ` - ${allergens}`;
+    }
+
+    // Update user using the class method
+    user.setDietary(dietaryRequirements);
+
+    // Send to Telegram
+    try {
+      await sendTelegramMessage(
+        `<b>Dietary Update</b>\n` +
+        `Name: ${user.name}${user.partnerName ? ' & ' + user.partnerName : ''}\n` +
+        `Requirements: ${dietaryRequirements}`
+      );
+      hidePopup();
+    } catch (error) {
+      console.error('Error sending dietary requirements:', error);
+      alert('There was an error saving your dietary requirements. Please try again.');
+    }
+  };
+
+  popup.style.display = "block";
+};
+
 const showPopup = (title, content) => {
   const popup = document.getElementById("popup");
   const popupTitle = document.getElementById("popup-title");
@@ -164,4 +232,5 @@ export {
   noiseMap,
   showPopup,
   hidePopup,
+  showDietaryPopup,
 };

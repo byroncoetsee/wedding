@@ -124,3 +124,48 @@ body {
     font-size: 0.85em;
   }
 }
+
+/*
+  DIATRY POPUP
+*/
+
+.radio-group {
+  margin-bottom: 20px;
+}
+
+.radio-group label {
+  display: block;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+.allergen-group {
+  margin-bottom: 20px;
+}
+
+.allergen-group label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.allergen-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.submit-btn {
+  background: #33c5e6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+}
+
+.submit-btn:hover {
+  background: #2ba5c3;
+}

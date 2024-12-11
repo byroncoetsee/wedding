@@ -17,6 +17,7 @@ import {
   degreesToRadians,
   showPopup,
   hidePopup,
+  showDietaryPopup,
 } from "./utils.js";
 
 var container = { width: window.innerWidth, height: window.innerHeight };
@@ -198,6 +199,13 @@ class User {
     const userData = JSON.parse(localStorage.getItem("currentUser"));
     userData.rsvped = true;
     userData.confirmed = rsvp;
+    localStorage.setItem("currentUser", JSON.stringify(userData));
+  }
+
+  setDietary(dietary) {
+    this.dietary = dietary;
+    const userData = JSON.parse(localStorage.getItem("currentUser"));
+    userData.dietary = dietary;
     localStorage.setItem("currentUser", JSON.stringify(userData));
   }
 }
@@ -478,14 +486,14 @@ class Scene {
         event.clientX !== undefined
           ? event.clientX
           : event.touches && event.touches[0]
-          ? event.touches[0].clientX
-          : null;
+            ? event.touches[0].clientX
+            : null;
       const y =
         event.clientY !== undefined
           ? event.clientY
           : event.touches && event.touches[0]
-          ? event.touches[0].clientY
-          : null;
+            ? event.touches[0].clientY
+            : null;
 
       if (x === null || y === null) return; // Guard against missing coordinates
 
@@ -868,10 +876,10 @@ class Island {
       // Scale the particle positions
       particule.position.set(
         randomize(randomize(-40, -15, true), randomize(15, 40, true), true) *
-          this.params.islandScale,
+        this.params.islandScale,
         randomize(-75, 6, true) * this.params.islandScale,
         randomize(randomize(-40, -15, true), randomize(15, 40, true), true) *
-          this.params.islandScale
+        this.params.islandScale
       );
 
       particles.add(particule);
@@ -1298,7 +1306,7 @@ class Bblock {
           (((normalizedPosition - (0.5 + delayTime / activeTime)) /
             (0.5 - delayTime / activeTime)) *
             Math.PI) /
-            2
+          2
         );
       } else {
         angle = 1;
@@ -1885,8 +1893,8 @@ const buildIsland_1 = () => {
     rotation: -0.3,
     width: 10,
     height: 5,
-    text: "We've moved!\n\nFly to other\nislands by\nclicking them",
-    fontSize: 0.6,
+    text: "Fly to other\nislands by\nclicking them",
+    fontSize: 0.8,
   });
   navigationSignpost.init();
   island.addItem(navigationSignpost.signpost);
@@ -1897,7 +1905,7 @@ const buildIsland_1 = () => {
     y: -3,
     z: 20,
     rotation: 0,
-    text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\nSave the date",
+    text: "Byron + Jen\n\nLittle razzle dazzle\n29-31 July 2025\n\n(2 nights away)",
     identifier: "save-the-date",
     onClick: () => {
       const user = JSON.parse(localStorage.getItem("currentUser"));
@@ -1915,9 +1923,8 @@ const buildIsland_1 = () => {
     z: 1,
     rotation: 1.4,
     text: currentUser
-      ? `${
-          currentUser.numberOfKids > 0 ? "" : "\n"
-        }${currentUser.getFamilyString()}\n\nFly around for more\ninfo...`
+      ? `${currentUser.numberOfKids > 0 ? "" : "\n"
+      }${currentUser.getFamilyString()}\n\nFly around for more\ninfo...`
       : "\n\nFly around for more\ninfo...",
   });
   signpost2.init();
@@ -1981,10 +1988,7 @@ const buildIsland_2 = () => {
         // sendTelegramMessage(`${currentUser.name} RSVP: Yes`);
         currentUser.setRSVP(true);
         window.location.reload();
-        window.open(
-          "https://chat.whatsapp.com/LBY6xdqwoG8A7Kaxmh5IlN",
-          "_blank"
-        );
+        window.location.href = "https://chat.whatsapp.com/LBY6xdqwoG8A7Kaxmh5IlN";
       },
     });
     signpostYes.init();
@@ -2088,7 +2092,14 @@ const buildIsland_3 = () => {
     y: -3,
     z: 10,
     rotation: -0.7,
-    text: "\n\nStill building this\nisland...",
+    text: currentUser.dietaryRequirements ?
+      `\nDietary\nRequirements:\n\n${currentUser.dietaryRequirements}` :
+      `\nDietary\nRequirements\n\n(Touch here)`,
+    ...(currentUser.dietaryRequirements ? {} : {
+      onClick: () => {
+        showDietaryPopup(currentUser);
+      }
+    })
   });
   signpost.init();
   island3.addItem(signpost.signpost);
