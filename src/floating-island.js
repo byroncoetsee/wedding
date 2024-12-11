@@ -2222,7 +2222,7 @@ const buildIsland_4 = () => {
     onClick: () => {
       showPopup(
         `A place to rest your head`,
-        `${all_text}<br><br>${accomData.text}:<br><br>${accomData.name}<br><a href="${accomData.url}" target="_blank">${accomData.url}</a>`
+        `${all_text}<br><br>${accomData.text}<br><br><a href="${accomData.url}" target="_blank">${accomData.name}</a>${accomData.paymentLink ? `<br><a href="${accomData.paymentLink}" target="_blank">Click here to pay</a>` : ''}`
       );
     },
   });
