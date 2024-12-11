@@ -7,7 +7,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Main Room 3",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -18,7 +18,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Waterkloof 1",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -29,7 +29,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Waterkloof 2",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -40,7 +40,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -51,7 +51,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -62,7 +62,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -73,7 +73,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -87,7 +87,7 @@
     ],
     "confirmed": true,
     "accom": "Container House, Pendennis",
-    "dietary": "",
+    "dietary": "Everything",
     "rsvped": true
   },
   {
@@ -101,7 +101,7 @@
     ],
     "confirmed": true,
     "accom": "Container House, Pendennis",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -112,7 +112,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Courtyard Cottage 1, Faraway Estate",
-    "dietary": "",
+    "dietary": "No lamb, No seeds",
     "rsvped": true
   },
   {
@@ -123,7 +123,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Main Room 1",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -134,7 +134,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Main Room 2",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -145,7 +145,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "Courtyard Room 1, Faraway Estate",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -156,7 +156,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Courtyard Room 2, Faraway Estate",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -170,7 +170,7 @@
     ],
     "confirmed": false,
     "accom": "Bergendal",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -181,7 +181,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Lavender Cottage, Pendennis",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -192,7 +192,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "Lavender Cottage, Pendennis",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -203,7 +203,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "None, Vegetarian",
     "rsvped": true
   },
   {
@@ -214,7 +214,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "De Villiers",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -228,7 +228,7 @@
     ],
     "confirmed": true,
     "accom": "Courtyard Cottage 2, Faraway Estate",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -242,7 +242,7 @@
     ],
     "confirmed": true,
     "accom": "Faraway Estate, Loft Room",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -253,7 +253,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "De Villiers",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -264,7 +264,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "De Villiers",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -275,7 +275,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "None, Vegetarian",
     "rsvped": true
   },
   {
@@ -286,7 +286,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "De Villiers",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -297,7 +297,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -308,7 +308,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "No fish",
     "rsvped": true
   },
   {
@@ -319,7 +319,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "De Villiers",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -332,7 +332,7 @@
     ],
     "confirmed": false,
     "accom": "Bergendal",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -345,7 +345,7 @@
     ],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -356,7 +356,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   },
   {
@@ -367,7 +367,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": true
   },
   {
@@ -378,7 +378,7 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "Bergendal",
-    "dietary": "",
+    "dietary": "None",
     "rsvped": false
   }
 ]

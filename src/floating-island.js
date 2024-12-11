@@ -20,6 +20,9 @@ import {
   showDietaryPopup,
 } from "./utils.js";
 
+// Add version constant at the top with other constants
+const APP_VERSION = "1.0.0"; // Increment this when you want to force data refresh
+
 var container = { width: window.innerWidth, height: window.innerHeight };
 const startCamDistanceMultiplier = 2;
 const landScale = 1;
@@ -149,7 +152,7 @@ class User {
     this.numberOfKids = data.kidNames.length;
     this.confirmed = data.confirmed;
     this.accommodation = data.accom;
-    this.dietaryRequirements = data.dietary;
+    this.dietary = data.dietary;
     this.rsvped = data.rsvped;
   }
 
@@ -202,39 +205,45 @@ class User {
     localStorage.setItem("currentUser", JSON.stringify(userData));
   }
 
-  setDietary(dietary) {
-    this.dietary = dietary;
+  setDietary(dietaryRequirements) {
+    this.dietary = dietaryRequirements;
     const userData = JSON.parse(localStorage.getItem("currentUser"));
-    userData.dietary = dietary;
+    userData.dietary = dietaryRequirements;
     localStorage.setItem("currentUser", JSON.stringify(userData));
+  }
+
+  hasDietaryRequirements() {
+    return this.dietary && (this.dietary.includes('all') || this.dietary.includes('vegetarian'));
   }
 }
 
 const initUser = async () => {
   const userId = parseInt(localStorage.getItem("userId"));
   const storedUser = localStorage.getItem("currentUser");
+  const storedVersion = localStorage.getItem("appVersion");
 
-  // If we have a stored user and the userId hasn't changed, use that
-  if (storedUser && userId === JSON.parse(storedUser).id) {
-    currentUser = new User(JSON.parse(storedUser));
-    return;
-  }
-
-  // Otherwise fetch new user data
-  try {
-    const response = await fetch("/data.json");
-    const guestData = await response.json();
-    const userData = guestData.find((guest) => guest.id === userId);
-    if (userData) {
-      currentUser = new User(userData);
-      // Store the new user data
-      localStorage.setItem("currentUser", JSON.stringify(userData));
-    } else {
+  // If version doesn't match or we have no stored user, fetch new data
+  if (storedVersion !== APP_VERSION || !storedUser || userId !== JSON.parse(storedUser).id) {
+    // Fetch new user data
+    try {
+      const response = await fetch("/data.json");
+      const guestData = await response.json();
+      const userData = guestData.find((guest) => guest.id === userId);
+      if (userData) {
+        currentUser = new User(userData);
+        // Store the new user data and version
+        localStorage.setItem("currentUser", JSON.stringify(userData));
+        localStorage.setItem("appVersion", APP_VERSION);
+      } else {
+        currentUser = null;
+      }
+    } catch (error) {
+      // Silently handle error
       currentUser = null;
     }
-  } catch (error) {
-    // Silently handle error
-    currentUser = null;
+  } else {
+    // Use stored user data if version matches
+    currentUser = new User(JSON.parse(storedUser));
   }
 };
 
@@ -2092,10 +2101,10 @@ const buildIsland_3 = () => {
     y: -3,
     z: 10,
     rotation: -0.7,
-    text: currentUser.dietaryRequirements ?
-      `\nDietary\nRequirements:\n\n${currentUser.dietaryRequirements}` :
+    text: currentUser.hasDietaryRequirements() ?
+      `\nDietary\nRequirements:\n\n${currentUser.dietary}` :
       `\nDietary\nRequirements\n\n(Touch here)`,
-    ...(currentUser.dietaryRequirements ? {} : {
+    ...(currentUser.hasDietaryRequirements() ? {} : {
       onClick: () => {
         showDietaryPopup(currentUser);
       }
@@ -2277,25 +2286,14 @@ const buildVenueIsland = () => {
   cinema.init();
   venueIsland.addItem(cinema.cinemaGroup);
 
-  // Add some sheep
-  // for (let i = 0; i < 3; i++) {
-  //   const sheep = new Sheep(scene.scene, {
-  //     x: -8 + Math.random() * 16,
-  //     y: -3,
-  //     z: -8 + Math.random() * 16,
-  //     rotation: degreesToRadians(Math.random() * 360),
-  //     scale: 0.6,
-  //   });
-  //   sheep.init();
-  //   venueIsland.addItem(sheep.sheep);
-  // }
-
   // Add venue sign
   const venueSign = new SignPost(scene.scene, {
     x: -12,
     y: -3,
     z: -0,
-    height: 4,
+    height: 6,
+    fontSize: 0.5,
+    width: 10,
     rotation: degreesToRadians(290),
     text: "Faraway Estate\n\n6km outside of\nVilliersdorp\n\nTouch here directions",
     onClick: () => {

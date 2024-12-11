@@ -152,11 +152,11 @@ const showDietaryPopup = (user) => {
     <br>
       <div class="radio-group">
         <label>
-          <input type="radio" name="diet" value="all" ${user.dietaryRequirements === 'None' ? 'checked' : ''}>
+          <input type="radio" name="diet" value="all" ${user.dietary === 'None' ? 'checked' : ''}>
           All food (no restrictions)
         </label>
         <label>
-          <input type="radio" name="diet" value="vegetarian" ${user.dietaryRequirements === 'Vegetarian' ? 'checked' : ''}>
+          <input type="radio" name="diet" value="vegetarian" ${user.dietary === 'Vegetarian' ? 'checked' : ''}>
           Vegetarian/Vegan
         </label>
       </div>
@@ -201,6 +201,9 @@ const showDietaryPopup = (user) => {
       console.error('Error sending dietary requirements:', error);
       alert('There was an error saving your dietary requirements. Please try again.');
     }
+
+    // Refresh the page to show updated dietary requirements
+    window.location.reload();
   };
 
   popup.style.display = "block";
