@@ -40,7 +40,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
@@ -62,7 +62,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
@@ -81,7 +81,10 @@
     "name": "Jan",
     "partnerName": "Nick",
     "family": false,
-    "kidNames": ["Livvy", "Liam"],
+    "kidNames": [
+      "Livvy",
+      "Liam"
+    ],
     "confirmed": true,
     "accom": "Container House, Pendennis",
     "dietary": "all - no tomatoes",
@@ -92,10 +95,13 @@
     "name": "Rob",
     "partnerName": "Nades",
     "family": false,
-    "kidNames": ["Tanner", "Sage"],
+    "kidNames": [
+      "Tanner",
+      "Sage"
+    ],
     "confirmed": true,
     "accom": "Container House, Pendennis",
-    "dietary": "None",
+    "dietary": "vegetarian",
     "rsvped": true
   },
   {
@@ -128,19 +134,19 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Main Room 2",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
     "id": 12,
     "name": "Jacques",
-    "partnerName": "Joanna",
+    "partnerName": null,
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Courtyard Room 1, Faraway Estate",
-    "dietary": "None",
-    "rsvped": false
+    "dietary": "all",
+    "rsvped": true
   },
   {
     "id": 13,
@@ -150,7 +156,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Courtyard Room 2, Faraway Estate",
-    "dietary": "None",
+    "dietary": "all - broke normies",
     "rsvped": true
   },
   {
@@ -158,7 +164,10 @@
     "name": "Simone",
     "partnerName": null,
     "family": false,
-    "kidNames": ["Ashleigh", "Leah"],
+    "kidNames": [
+      "Ashleigh",
+      "Leah"
+    ],
     "confirmed": false,
     "accom": "Bergendal",
     "dietary": "None",
@@ -213,7 +222,10 @@
     "name": "Mike",
     "partnerName": "Kate",
     "family": false,
-    "kidNames": ["Theo", "Baby"],
+    "kidNames": [
+      "Theo",
+      "Baby"
+    ],
     "confirmed": true,
     "accom": "Courtyard Cottage 2, Faraway Estate",
     "dietary": "None",
@@ -224,7 +236,10 @@
     "name": "Jarryd",
     "partnerName": "Tam",
     "family": false,
-    "kidNames": ["Hunter", "Sienna"],
+    "kidNames": [
+      "Hunter",
+      "Sienna"
+    ],
     "confirmed": true,
     "accom": "Faraway Estate, Loft Room",
     "dietary": "None",
@@ -312,7 +327,9 @@
     "name": "Sonja",
     "partnerName": null,
     "family": false,
-    "kidNames": ["Neil"],
+    "kidNames": [
+      "Neil"
+    ],
     "confirmed": false,
     "accom": "Bergendal",
     "dietary": "None",
@@ -323,7 +340,9 @@
     "name": "Kerryn",
     "partnerName": null,
     "family": false,
-    "kidNames": ["Addison"],
+    "kidNames": [
+      "Addison"
+    ],
     "confirmed": true,
     "accom": "Rietspruit",
     "dietary": "None",
