@@ -18,18 +18,18 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Waterkloof 1",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
     "id": 2,
     "name": "Jerry",
     "partnerName": "Mags",
-    "family": false,
+    "family": true,
     "kidNames": [],
     "confirmed": true,
     "accom": "Faraway Estate, Waterkloof 2",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
@@ -51,7 +51,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Pendennis, Pink Lady",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
@@ -81,10 +81,7 @@
     "name": "Jan",
     "partnerName": "Nick",
     "family": false,
-    "kidNames": [
-      "Livvy",
-      "Liam"
-    ],
+    "kidNames": ["Livvy", "Liam"],
     "confirmed": true,
     "accom": "Container House, Pendennis",
     "dietary": "all - no tomatoes",
@@ -95,10 +92,7 @@
     "name": "Rob",
     "partnerName": "Nades",
     "family": false,
-    "kidNames": [
-      "Tanner",
-      "Sage"
-    ],
+    "kidNames": ["Tanner", "Sage"],
     "confirmed": true,
     "accom": "Container House, Pendennis",
     "dietary": "vegetarian",
@@ -164,14 +158,11 @@
     "name": "Simone",
     "partnerName": null,
     "family": false,
-    "kidNames": [
-      "Ashleigh",
-      "Leah"
-    ],
-    "confirmed": false,
+    "kidNames": ["Ashleigh", "Leah"],
+    "confirmed": true,
     "accom": "Bergendal",
-    "dietary": "None",
-    "rsvped": false
+    "dietary": "all",
+    "rsvped": true
   },
   {
     "id": 15,
@@ -181,7 +172,7 @@
     "kidNames": [],
     "confirmed": true,
     "accom": "Lavender Cottage, Pendennis",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
@@ -190,10 +181,10 @@
     "partnerName": null,
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "Lavender Cottage, Pendennis",
-    "dietary": "None",
-    "rsvped": false
+    "dietary": "all",
+    "rsvped": true
   },
   {
     "id": 17,
@@ -222,10 +213,7 @@
     "name": "Mike",
     "partnerName": "Kate",
     "family": false,
-    "kidNames": [
-      "Theo",
-      "Baby"
-    ],
+    "kidNames": ["Theo", "Baby"],
     "confirmed": true,
     "accom": "Courtyard Cottage 2, Faraway Estate",
     "dietary": "None",
@@ -236,10 +224,7 @@
     "name": "Jarryd",
     "partnerName": "Tam",
     "family": false,
-    "kidNames": [
-      "Hunter",
-      "Sienna"
-    ],
+    "kidNames": ["Hunter", "Sienna"],
     "confirmed": true,
     "accom": "Faraway Estate, Loft Room",
     "dietary": "None",
@@ -317,35 +302,31 @@
     "partnerName": null,
     "family": false,
     "kidNames": [],
-    "confirmed": false,
+    "confirmed": true,
     "accom": "De Villiers",
-    "dietary": "None",
-    "rsvped": false
+    "dietary": "all",
+    "rsvped": true
   },
   {
     "id": 28,
     "name": "Sonja",
     "partnerName": null,
     "family": false,
-    "kidNames": [
-      "Neil"
-    ],
-    "confirmed": false,
+    "kidNames": [],
+    "confirmed": true,
     "accom": "Bergendal",
-    "dietary": "None",
-    "rsvped": false
+    "dietary": "all",
+    "rsvped": true
   },
   {
     "id": 29,
     "name": "Kerryn",
     "partnerName": null,
     "family": false,
-    "kidNames": [
-      "Addison"
-    ],
+    "kidNames": ["Addison"],
     "confirmed": true,
     "accom": "Rietspruit",
-    "dietary": "None",
+    "dietary": "all",
     "rsvped": true
   },
   {
@@ -356,8 +337,8 @@
     "kidNames": [],
     "confirmed": false,
     "accom": "Rietspruit",
-    "dietary": "None",
-    "rsvped": false
+    "dietary": "all",
+    "rsvped": true
   },
   {
     "id": 31,
@@ -375,6 +356,17 @@
     "name": "Daniel",
     "partnerName": null,
     "family": true,
+    "kidNames": [],
+    "confirmed": false,
+    "accom": "Bergendal",
+    "dietary": "None",
+    "rsvped": false
+  },
+  {
+    "id": 33,
+    "name": "Tiffany",
+    "partnerName": "Lewis",
+    "family": false,
     "kidNames": [],
     "confirmed": false,
     "accom": "Bergendal",
